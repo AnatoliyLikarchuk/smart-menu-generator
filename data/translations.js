@@ -432,6 +432,7 @@ export const INGREDIENT_TRANSLATIONS = {
   'corn': 'кукуруза',
   'peas': 'горошек',
   'green beans': 'зеленая фасоль',
+  'fennel': 'фенхель',
 
   // Травы и специи
   'basil': 'базилик',
@@ -453,12 +454,15 @@ export const INGREDIENT_TRANSLATIONS = {
   'cloves': 'гвоздика',
   'cardamom': 'кардамон',
   'bay leaves': 'лавровый лист',
+  'bay leaf': 'лавровый лист',
   'black pepper': 'черный перец',
   'white pepper': 'белый перец',
   'red pepper flakes': 'хлопья красного перца',
   'cayenne pepper': 'кайенский перец',
   'chili powder': 'порошок чили',
   'curry powder': 'порошок карри',
+  'harissa': 'харисса',
+  'harissa spice': 'специя харисса',
 
   // Молочные продукты
   'milk': 'молоко',
@@ -585,6 +589,7 @@ export const INGREDIENT_TRANSLATIONS = {
   'fish broth': 'рыбный бульон',
   'red wine': 'красное вино',
   'white wine': 'белое вино',
+  'dry white wine': 'сухое белое вино',
   'cooking wine': 'вино для готовки',
   'beer': 'пиво',
   'sake': 'саке',
@@ -652,6 +657,7 @@ export const INGREDIENT_TRANSLATIONS = {
   'frozen vegetables': 'замороженные овощи',
   'canned tomatoes': 'консервированные помидоры',
   'diced tomatoes': 'нарезанные помидоры',
+  'chopped tomatoes': 'нарезанные помидоры',
   'crushed tomatoes': 'измельченные помидоры',
   'tomato puree': 'томатное пюре',
   'sun-dried tomatoes': 'вяленые помидоры',

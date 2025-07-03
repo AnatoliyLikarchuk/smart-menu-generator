@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест переводов</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; border-left: 5px solid #28a745; }
+        .pending { background: #fff3cd; border-left: 5px solid #ffc107; }
+        .error { background: #f8d7da; border-left: 5px solid #dc3545; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .ingredient { display: flex; justify-content: space-between; margin: 5px 0; }
+        .original { color: #666; }
+        .translated { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Тест системы переводов</h1>
+        
+        <button onclick="testTranslations()">Запустить тест</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        // Импортируем сервис перевода
+        import TranslationService from '../services/translationService.js';
+        
+        // Тестовые данные
+        const testDish = {
+            idMeal: "52874",
+            strMeal: "Chicken Tikka Masala",
+            strCategory: "Chicken", 
+            strArea: "Indian",
+            strIngredient1: "Chicken",
+            strIngredient2: "Plain Flour",
+            strIngredient3: "Vegetable Oil", 
+            strIngredient4: "Onion",
+            strIngredient5: "Garlic",
+            strIngredient6: "Ginger",
+            strIngredient7: "Tomatoes",
+            strIngredient8: "Cumin",
+            strIngredient9: "Coriander",
+            strIngredient10: "Paprika"
+        };
+
+        window.testTranslations = async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="test-result pending">🔄 Запускаем тест переводов...</div>';
+            
+            try {
+                // Тестируем перевод блюда
+                resultsDiv.innerHTML += '<div class="test-result pending">📝 Переводим блюдо...</div>';
+                
+                const translatedDish = await TranslationService.translateDish(testDish, true, true);
+                
+                let html = '<div class="test-result success">';
+                html += '<h3>📋 Результаты перевода:</h3>';
+                html += `<p><strong>Блюдо:</strong> ${testDish.strMeal} → <span class="translated">${translatedDish.strMealRu || 'НЕ ПЕРЕВЕДЕНО'}</span></p>`;
+                html += `<p><strong>Категория:</strong> ${testDish.strCategory} → <span class="translated">${translatedDish.strCategoryRu || 'НЕ ПЕРЕВЕДЕНО'}</span></p>`;
+                html += `<p><strong>Кухня:</strong> ${testDish.strArea} → <span class="translated">${translatedDish.strAreaRu || 'НЕ ПЕРЕВЕДЕНО'}</span></p>`;
+                
+                if (translatedDish.ingredientsRu) {
+                    html += '<h4>🥘 Ингредиенты:</h4>';
+                    const ingredients = TranslationService.extractIngredients(testDish);
+                    ingredients.forEach((ingredient, index) => {
+                        const translation = translatedDish.ingredientsRu[index];
+                        html += `<div class="ingredient">`;
+                        html += `<span class="original">${ingredient}</span>`;
+                        html += `<span class="translated">${translation || 'НЕ ПЕРЕВЕДЕНО'}</span>`;
+                        html += `</div>`;
+                    });
+                }
+                
+                // Статистика кэша
+                const stats = TranslationService.getCacheStats();
+                html += `<h4>📊 Статистика кэша:</h4>`;
+                html += `<p>Элементов: ${stats.count}, Размер: ${stats.sizeKB} KB</p>`;
+                html += '</div>';
+                
+                resultsDiv.innerHTML += html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML += `<div class="test-result error">❌ Ошибка: ${error.message}</div>`;
+                console.error('Ошибка теста:', error);
+            }
+        };
+    </script>
+</body>
+</html>
