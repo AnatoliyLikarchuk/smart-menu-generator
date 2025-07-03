@@ -378,7 +378,13 @@ export const DISH_TRANSLATIONS = {
   
   // Греческие блюда
   'Gardes Saganaki': 'Креветки Саганаки',
-  'Garides Saganaki': 'Креветки Саганаки'
+  'Garides Saganaki': 'Креветки Саганаки',
+  
+  // Мексиканские блюда  
+  'Chickpea Fajitas': 'Фахитас с нутом',
+  'Chicken Fajitas': 'Куриные фахитас',
+  'Beef Fajitas': 'Говяжьи фахитас',
+  'Vegetable Fajitas': 'Овощные фахитас'
 };
 
 /**
@@ -711,7 +717,23 @@ export const INGREDIENT_TRANSLATIONS = {
   'raw prawns': 'сырые креветки',
   'cooked prawns': 'вареные креветки',
   'large prawns': 'крупные креветки',
-  'king prawns': 'королевские креветки'
+  'king prawns': 'королевские креветки',
+  
+  // Цветные овощи
+  'red onion': 'красный лук',
+  'white onion': 'белый лук',
+  'yellow onion': 'желтый лук',
+  'green onion': 'зеленый лук',
+  'spring onion': 'зеленый лук',
+  'red pepper': 'красный перец',
+  'green pepper': 'зеленый перец',
+  'yellow pepper': 'желтый перец',
+  'red bell pepper': 'красный болгарский перец',
+  'green bell pepper': 'зеленый болгарский перец',
+  'yellow bell pepper': 'желтый болгарский перец',
+  'red cabbage': 'красная капуста',
+  'white cabbage': 'белая капуста',
+  'green cabbage': 'зеленая капуста'
 };
 
 /**
