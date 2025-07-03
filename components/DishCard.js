@@ -336,26 +336,24 @@ export default function DishCard({
           <div className="flex space-x-2">
             <button
               onClick={handleLike}
-              className={`flex items-center px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
+              className={`flex items-center px-2 sm:px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
                 isLiked
                   ? 'bg-green-500 text-white shadow-md hover:bg-green-600'
                   : 'bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-600'
               }`}
             >
               <ThumbsUp 
-                className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} 
+                className={`w-4 h-4 ${isLiked ? 'fill-current' : ''} sm:mr-2`} 
               />
               <span className="text-sm hidden sm:inline">Нравится</span>
-              <span className="text-sm sm:hidden">👍</span>
             </button>
 
             <button
               onClick={handleDislike}
-              className="flex items-center px-3 py-2 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+              className="flex items-center px-2 sm:px-3 py-2 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
             >
-              <ThumbsDown className="w-4 h-4 mr-2" />
+              <ThumbsDown className="w-4 h-4 sm:mr-2" />
               <span className="text-sm hidden sm:inline">Не нравится</span>
-              <span className="text-sm sm:hidden">👎</span>
             </button>
           </div>
 
