@@ -374,7 +374,11 @@ export const DISH_TRANSLATIONS = {
   'Macarons': 'Макаруны',
   'Croquembouche': 'Крокембуш',
   'Tarte aux Fruits': 'Фруктовый тарт',
-  'Fruit Tart': 'Фруктовый тарт'
+  'Fruit Tart': 'Фруктовый тарт',
+  
+  // Греческие блюда
+  'Gardes Saganaki': 'Креветки Саганаки',
+  'Garides Saganaki': 'Креветки Саганаки'
 };
 
 /**
@@ -685,7 +689,29 @@ export const INGREDIENT_TRANSLATIONS = {
   'nutritional yeast': 'пищевые дрожжи',
   'protein powder': 'протеиновый порошок',
   'whey protein': 'сывороточный протеин',
-  'collagen powder': 'коллагеновый порошок'
+  'collagen powder': 'коллагеновый порошок',
+  
+  // Составные ингредиенты с прилагательными
+  'raw king prawns': 'сырые королевские креветки',
+  'chopped onion': 'нарезанный лук',
+  'fresh tomatoes': 'свежие помидоры',
+  'chopped tomatoes': 'нарезанные помидоры',
+  'diced onion': 'нарезанный кубиками лук',
+  'sliced onion': 'нарезанный ломтиками лук',
+  'minced garlic': 'измельченный чеснок',
+  'crushed garlic': 'раздавленный чеснок',
+  'fresh herbs': 'свежие травы',
+  'dried herbs': 'сушеные травы',
+  'ground beef': 'говяжий фарш',
+  'ground chicken': 'куриный фарш',
+  'ground pork': 'свиной фарш',
+  'boneless chicken': 'курица без костей',
+  'chicken breast': 'куриная грудка',
+  'chicken thighs': 'куриные бедра',
+  'raw prawns': 'сырые креветки',
+  'cooked prawns': 'вареные креветки',
+  'large prawns': 'крупные креветки',
+  'king prawns': 'королевские креветки'
 };
 
 /**
@@ -760,7 +786,29 @@ export function translateIngredient(ingredient) {
   if (!ingredient) return '';
   
   const cleanIngredient = ingredient.toLowerCase().trim();
-  return INGREDIENT_TRANSLATIONS[cleanIngredient] || ingredient;
+  
+  // Сначала проверяем точное совпадение (включая составные названия)
+  const exactMatch = INGREDIENT_TRANSLATIONS[cleanIngredient];
+  if (exactMatch) {
+    return exactMatch;
+  }
+  
+  // Если точного совпадения нет, пробуем найти по словам
+  const words = cleanIngredient.split(' ');
+  if (words.length > 1) {
+    // Для составных ингредиентов пробуем разные комбинации
+    for (let i = words.length; i > 0; i--) {
+      const phrase = words.slice(0, i).join(' ');
+      const translation = INGREDIENT_TRANSLATIONS[phrase];
+      if (translation) {
+        // Переводим найденную часть, остальное оставляем как есть
+        const remaining = words.slice(i).join(' ');
+        return remaining ? `${translation} ${remaining}` : translation;
+      }
+    }
+  }
+  
+  return ingredient;
 }
 
 /**
