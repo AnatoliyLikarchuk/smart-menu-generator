@@ -289,40 +289,37 @@ export default function DishCard({
             </button>
             
             {showIngredients && (
-              <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
+              <div className="bg-gray-50 rounded-lg p-4 max-h-60 overflow-y-auto">
                 {translating && showRussian && (
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
+                  <div className="flex items-center text-sm text-gray-500 mb-3">
                     <Languages className="w-4 h-4 mr-2 animate-pulse" />
                     Переводим ингредиенты...
                   </div>
                 )}
-                <div className="grid grid-cols-1 gap-1">
-                  {ingredients.slice(0, 10).map((ingredient, index) => {
+                <div className="grid grid-cols-1 gap-2">
+                  {ingredients.map((ingredient, index) => {
                     const translatedName = showRussian && translatedDish?.ingredientsRu?.[index]
                       ? translatedDish.ingredientsRu[index]
                       : ingredient.name;
                     
                     return (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span className="text-gray-700">
+                      <div key={index} className="flex justify-between items-center py-1">
+                        <span className="text-gray-800 font-medium text-base">
                           {translatedName}
                           {showRussian && translatedName !== ingredient.name && (
-                            <span className="text-gray-400 text-xs ml-1">
+                            <span className="text-gray-400 text-sm ml-2 font-normal">
                               ({ingredient.name})
                             </span>
                           )}
                         </span>
                         {ingredient.measure && (
-                          <span className="text-gray-500 text-xs">{ingredient.measure}</span>
+                          <span className="text-gray-600 text-sm font-medium ml-3 flex-shrink-0">
+                            {ingredient.measure}
+                          </span>
                         )}
                       </div>
                     );
                   })}
-                  {ingredients.length > 10 && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      +{ingredients.length - 10} ингредиентов
-                    </div>
-                  )}
                 </div>
               </div>
             )}
