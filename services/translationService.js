@@ -126,6 +126,138 @@ export class TranslationService {
   }
   
   /**
+   * Переводит единицы измерения
+   * @param {string} measure - мера измерения на английском
+   * @returns {string} переведенная мера
+   */
+  static translateMeasure(measure) {
+    if (!measure || !measure.trim()) return '';
+    
+    const measureLower = measure.toLowerCase().trim();
+    
+    // Словарь переводов мер измерения
+    const measureTranslations = {
+      // Ложки
+      'tsp': 'ч.л.',
+      'teaspoon': 'ч.л.',
+      'teaspoons': 'ч.л.',
+      'tbsp': 'ст.л.',
+      'tbs': 'ст.л.',
+      'tablespoon': 'ст.л.',
+      'tablespoons': 'ст.л.',
+      
+      // Чашки и стаканы
+      'cup': 'стакан',
+      'cups': 'стаканов',
+      'c': 'стакан',
+      
+      // Размеры
+      'large': 'большой',
+      'medium': 'средний',
+      'small': 'маленький',
+      'big': 'большой',
+      
+      // Вес и объем
+      'oz': 'унций',
+      'lb': 'фунт',
+      'lbs': 'фунтов',
+      'pound': 'фунт',
+      'pounds': 'фунтов',
+      'kg': 'кг',
+      'g': 'г',
+      'ml': 'мл',
+      'l': 'л',
+      'pint': 'пинта',
+      'pints': 'пинт',
+      'quart': 'кварта',
+      'quarts': 'кварт',
+      'gallon': 'галлон',
+      'gallons': 'галлонов',
+      
+      // Количество
+      'piece': 'штука',
+      'pieces': 'штук',
+      'slice': 'ломтик',
+      'slices': 'ломтиков',
+      'bunch': 'пучок',
+      'head': 'головка',
+      'heads': 'головок',
+      'clove': 'зубчик',
+      'cloves': 'зубчиков',
+      'can': 'банка',
+      'cans': 'банок',
+      'jar': 'банка',
+      'jars': 'банок',
+      'bottle': 'бутылка',
+      'bottles': 'бутылок',
+      'packet': 'пакет',
+      'packets': 'пакетов',
+      'bag': 'пакет',
+      'bags': 'пакетов',
+      'box': 'коробка',
+      'boxes': 'коробок',
+      'package': 'упаковка',
+      'packages': 'упаковок',
+      
+      // Состояния
+      'fresh': 'свежий',
+      'dried': 'сушеный',
+      'frozen': 'замороженный',
+      'canned': 'консервированный',
+      'chopped': 'нарезанный',
+      'diced': 'кубиками',
+      'sliced': 'нарезанный',
+      'minced': 'измельченный',
+      'grated': 'тертый',
+      'peeled': 'очищенный',
+      'skinless': 'без кожи',
+      'boneless': 'без костей',
+      'separated': 'отделенный',
+      'beaten': 'взбитый',
+      'melted': 'растопленный',
+      'softened': 'размягченный',
+      'warmed': 'подогретый',
+      'cooled': 'охлажденный',
+      'room temperature': 'комнатной температуры',
+      
+      // Дроби и числительные
+      '1/2': '1/2',
+      '1/3': '1/3',
+      '1/4': '1/4',
+      '2/3': '2/3',
+      '3/4': '3/4',
+      'half': 'половина',
+      'quarter': 'четверть',
+      
+      // Прочее
+      'to taste': 'по вкусу',
+      'pinch': 'щепотка',
+      'pinches': 'щепоток',
+      'dash': 'щепотка',
+      'sprinkle': 'посыпать',
+      'handful': 'горсть',
+      'enough': 'достаточно',
+      'some': 'немного',
+      'little': 'немного',
+      'bit': 'немного'
+    };
+    
+    // Попробуем найти точное совпадение
+    if (measureTranslations[measureLower]) {
+      return measureTranslations[measureLower];
+    }
+    
+    // Попробуем найти частичное совпадение для составных мер
+    for (const [eng, ru] of Object.entries(measureTranslations)) {
+      if (measureLower.includes(eng)) {
+        return measure.toLowerCase().replace(eng, ru);
+      }
+    }
+    
+    return measure; // Возвращаем оригинал если не нашли перевод
+  }
+  
+  /**
    * Переводит блюдо целиком (название, категория, область, ингредиенты)
    * @param {object} dish - объект блюда
    * @param {boolean} translateIngredients - переводить ли ингредиенты

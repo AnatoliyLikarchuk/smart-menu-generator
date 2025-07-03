@@ -314,7 +314,9 @@ export default function DishCard({
                         </span>
                         {ingredient.measure && (
                           <span className="text-gray-600 text-sm font-medium ml-3 flex-shrink-0">
-                            {ingredient.measure}
+                            {showRussian 
+                              ? TranslationService.translateMeasure(ingredient.measure)
+                              : ingredient.measure}
                           </span>
                         )}
                       </div>
