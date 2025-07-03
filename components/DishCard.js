@@ -1,6 +1,6 @@
 // Компонент красивой карточки блюда
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Heart, 
   HeartOff, 
@@ -10,9 +10,11 @@ import {
   ExternalLink,
   Share2,
   BookmarkPlus,
-  Info
+  Info,
+  Languages
 } from 'lucide-react';
 import StorageService from '../services/storageService.js';
+import TranslationService from '../services/translationService.js';
 
 /**
  * Компонент карточки блюда
@@ -36,12 +38,36 @@ export default function DishCard({
   onDislike,
   isLiked = false,
   showDetails = true,
-  onFavoriteToggle
+  onFavoriteToggle,
+  useRussian = true,
+  showLanguageToggle = true
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showIngredients, setShowIngredients] = useState(false);
   const [isFavorite, setIsFavorite] = useState(StorageService.isFavorite(dish.idMeal));
+  const [translatedDish, setTranslatedDish] = useState(null);
+  const [translating, setTranslating] = useState(false);
+  const [showRussian, setShowRussian] = useState(useRussian);
+
+  // Эффект для перевода блюда
+  useEffect(() => {
+    const translateDishData = async () => {
+      if (!dish || !showRussian) return;
+      
+      setTranslating(true);
+      try {
+        const translated = await TranslationService.translateDish(dish, true, true);
+        setTranslatedDish(translated);
+      } catch (error) {
+        console.warn('[DishCard] Ошибка перевода:', error.message);
+      } finally {
+        setTranslating(false);
+      }
+    };
+
+    translateDishData();
+  }, [dish, showRussian]);
 
   // Получение ингредиентов из объекта блюда
   const getIngredients = () => {
@@ -172,7 +198,9 @@ export default function DishCard({
           {/* Категория блюда */}
           <div className="absolute top-4 left-4">
             <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-700">
-              {dish.strCategory}
+              {showRussian && translatedDish?.strCategoryRu 
+                ? translatedDish.strCategoryRu 
+                : dish.strCategory}
             </span>
           </div>
 
@@ -189,14 +217,33 @@ export default function DishCard({
 
         {/* Название блюда */}
         <div className="absolute bottom-4 left-4 right-4">
-          <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
-            {dish.strMeal}
-          </h3>
-          {dish.strArea && (
-            <p className="text-white/80 text-sm drop-shadow">
-              {dish.strArea} кухня
-            </p>
-          )}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
+                {showRussian && translatedDish?.strMealRu 
+                  ? translatedDish.strMealRu 
+                  : dish.strMeal}
+              </h3>
+              {dish.strArea && (
+                <p className="text-white/80 text-sm drop-shadow">
+                  {showRussian && translatedDish?.strAreaRu 
+                    ? `${translatedDish.strAreaRu} кухня`
+                    : `${dish.strArea} кухня`}
+                </p>
+              )}
+            </div>
+            
+            {/* Переключатель языка */}
+            {showLanguageToggle && (
+              <button
+                onClick={() => setShowRussian(!showRussian)}
+                className="ml-2 p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                title={showRussian ? 'Switch to English' : 'Переключить на русский'}
+              >
+                <Languages className="w-4 h-4 text-white" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -243,15 +290,34 @@ export default function DishCard({
             
             {showIngredients && (
               <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
+                {translating && showRussian && (
+                  <div className="flex items-center text-sm text-gray-500 mb-2">
+                    <Languages className="w-4 h-4 mr-2 animate-pulse" />
+                    Переводим ингредиенты...
+                  </div>
+                )}
                 <div className="grid grid-cols-1 gap-1">
-                  {ingredients.slice(0, 10).map((ingredient, index) => (
-                    <div key={index} className="flex justify-between text-sm">
-                      <span className="text-gray-700">{ingredient.name}</span>
-                      {ingredient.measure && (
-                        <span className="text-gray-500 text-xs">{ingredient.measure}</span>
-                      )}
-                    </div>
-                  ))}
+                  {ingredients.slice(0, 10).map((ingredient, index) => {
+                    const translatedName = showRussian && translatedDish?.ingredientsRu?.[index]
+                      ? translatedDish.ingredientsRu[index]
+                      : ingredient.name;
+                    
+                    return (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span className="text-gray-700">
+                          {translatedName}
+                          {showRussian && translatedName !== ingredient.name && (
+                            <span className="text-gray-400 text-xs ml-1">
+                              ({ingredient.name})
+                            </span>
+                          )}
+                        </span>
+                        {ingredient.measure && (
+                          <span className="text-gray-500 text-xs">{ingredient.measure}</span>
+                        )}
+                      </div>
+                    );
+                  })}
                   {ingredients.length > 10 && (
                     <div className="text-xs text-gray-500 mt-1">
                       +{ingredients.length - 10} ингредиентов
