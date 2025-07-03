@@ -60,7 +60,7 @@ export class TranslationService {
    * @param {boolean} useAPI - использовать ли API для неизвестных переводов
    * @returns {Promise<string>} переведенный ингредиент
    */
-  static async translateIngredient(ingredient, useAPI = false) {
+  static async translateIngredient(ingredient, useAPI = true) {
     if (!ingredient || !ingredient.trim()) return '';
     
     // Сначала проверяем статический словарь
@@ -97,7 +97,7 @@ export class TranslationService {
    * @param {boolean} useAPI - использовать ли API
    * @returns {Promise<Array>} массив переведенных ингредиентов
    */
-  static async translateIngredients(ingredients, useAPI = false) {
+  static async translateIngredients(ingredients, useAPI = true) {
     if (!Array.isArray(ingredients)) return [];
     
     const translations = await Promise.all(
@@ -156,7 +156,7 @@ export class TranslationService {
       // Переводим ингредиенты
       if (translateIngredients) {
         const ingredients = this.extractIngredients(dish);
-        const translatedIngredients = await this.translateIngredients(ingredients, false); // API выключен для ингредиентов
+        const translatedIngredients = await this.translateIngredients(ingredients, true); // API включен для ингредиентов
         translatedDish.ingredientsRu = translatedIngredients;
       }
       
@@ -347,7 +347,7 @@ export class TranslationService {
       try {
         await this.translateDishName(dishName, true);
         // Небольшая задержка чтобы не перегружать API
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         console.warn(`[TranslationService] Ошибка предзагрузки "${dishName}":`, error.message);
       }
