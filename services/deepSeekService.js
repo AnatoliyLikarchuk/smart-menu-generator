@@ -46,7 +46,7 @@ export class DeepSeekService {
             }
           ],
           temperature: 0.1,
-          max_tokens: 200,
+          max_tokens: 1000,
           top_p: 0.95
         }),
         signal: AbortSignal.timeout(this.TIMEOUT)
