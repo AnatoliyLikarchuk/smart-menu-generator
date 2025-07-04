@@ -82,7 +82,7 @@ export default function MealTypeSelector({
     const isSelected = selectedType === type;
     const isDetected = detectedType === type;
     
-    const baseClasses = 'relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50';
+    const baseClasses = 'relative flex flex-col items-center p-3 md:p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50';
     
     if (isSelected) {
       return `${baseClasses} border-${config.color}-500 bg-${config.color}-50 shadow-lg ring-4 ring-${config.color}-200`;
@@ -101,10 +101,10 @@ export default function MealTypeSelector({
     const isSelected = selectedType === type;
     
     if (isSelected) {
-      return `w-8 h-8 text-${config.color}-600`;
+      return `w-6 h-6 md:w-8 md:h-8 text-${config.color}-600`;
     }
     
-    return `w-8 h-8 text-gray-400 group-hover:text-${config.color}-500`;
+    return `w-6 h-6 md:w-8 md:h-8 text-gray-400 group-hover:text-${config.color}-500`;
   };
 
   return (
@@ -126,7 +126,7 @@ export default function MealTypeSelector({
       </div>
 
       {/* Кнопки выбора типа питания */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
         {Object.entries(mealTypeConfig).map(([type, config]) => {
           const IconComponent = config.icon;
           const isSelected = selectedType === type;
@@ -140,12 +140,12 @@ export default function MealTypeSelector({
               aria-label={`Выбрать ${config.label}`}
             >
               {/* Иконка типа питания */}
-              <div className="mb-3">
+              <div className="mb-2 md:mb-3">
                 <IconComponent className={getIconClasses(type)} />
               </div>
               
               {/* Название типа питания */}
-              <h3 className={`text-lg font-semibold mb-1 ${
+              <h3 className={`text-base md:text-lg font-semibold mb-1 ${
                 isSelected 
                   ? `text-${config.color}-700` 
                   : 'text-gray-700 group-hover:text-gray-800'
@@ -154,7 +154,7 @@ export default function MealTypeSelector({
               </h3>
               
               {/* Временной диапазон */}
-              <p className={`text-xs mb-2 ${
+              <p className={`text-xs mb-1 ${
                 isSelected 
                   ? `text-${config.color}-600` 
                   : 'text-gray-500'
@@ -163,7 +163,7 @@ export default function MealTypeSelector({
               </p>
               
               {/* Описание */}
-              <p className={`text-sm text-center ${
+              <p className={`text-sm text-center hidden md:block ${
                 isSelected 
                   ? `text-${config.color}-600` 
                   : 'text-gray-500'
