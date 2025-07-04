@@ -180,7 +180,7 @@ export class DishService {
       }
       
       // Получаем полную информацию для каждого блюда (включая инструкции)
-      const detailedDishes = await this.fetchDetailedDishes(data.meals.slice(0, 10)); // Ограничиваем 10 блюдами на категорию
+      const detailedDishes = await this.fetchDetailedDishes(data.meals.slice(0, 25)); // Ограничиваем 25 блюдами на категорию для большего разнообразия
       
       return detailedDishes;
       

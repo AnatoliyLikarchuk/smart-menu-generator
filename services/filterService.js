@@ -409,27 +409,66 @@ export class FilterService {
     
     const selected = [];
     const usedCategories = new Set();
-    const remaining = [...scoredDishes];
     
-    // Сортируем по оценке (высокие оценки первыми)
-    remaining.sort((a, b) => b.score - a.score);
+    // Группируем блюда по категориям
+    const dishesByCategory = new Map();
+    scoredDishes.forEach(item => {
+      const category = item.dish.strCategory;
+      if (!dishesByCategory.has(category)) {
+        dishesByCategory.set(category, []);
+      }
+      dishesByCategory.get(category).push(item);
+    });
     
-    // Выбираем блюда из разных категорий
-    for (const item of remaining) {
+    // Сортируем блюда в каждой категории по оценке и добавляем случайность
+    dishesByCategory.forEach((dishes, category) => {
+      dishes.sort((a, b) => b.score - a.score);
+      // Добавляем небольшую случайность к сортировке для блюд с похожими оценками
+      for (let i = 0; i < dishes.length - 1; i++) {
+        if (Math.abs(dishes[i].score - dishes[i + 1].score) <= 1 && Math.random() < 0.3) {
+          [dishes[i], dishes[i + 1]] = [dishes[i + 1], dishes[i]];
+        }
+      }
+    });
+    
+    // Выбираем случайное блюдо из топ-3 каждой категории
+    const categoriesArray = Array.from(dishesByCategory.keys());
+    
+    // Перемешиваем категории для случайного порядка обработки
+    for (let i = categoriesArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [categoriesArray[i], categoriesArray[j]] = [categoriesArray[j], categoriesArray[i]];
+    }
+    
+    // Выбираем по одному блюду из каждой категории
+    for (const category of categoriesArray) {
       if (selected.length >= count) break;
       
-      const category = item.dish.strCategory;
       if (!usedCategories.has(category)) {
-        selected.push(item);
+        const categoryDishes = dishesByCategory.get(category);
+        // Выбираем случайное блюдо из топ-3 (или всех, если меньше 3)
+        const topDishes = categoryDishes.slice(0, Math.min(3, categoryDishes.length));
+        const randomIndex = Math.floor(Math.random() * topDishes.length);
+        const selectedItem = topDishes[randomIndex];
+        
+        selected.push(selectedItem);
         usedCategories.add(category);
       }
     }
     
-    // Если нужно больше блюд, добавляем лучшие из оставшихся
+    // Если нужно больше блюд, добавляем случайные из оставшихся
     if (selected.length < count) {
-      const additional = remaining
-        .filter(item => !selected.some(s => s.dish.idMeal === item.dish.idMeal))
-        .slice(0, count - selected.length);
+      const remaining = scoredDishes.filter(item => 
+        !selected.some(s => s.dish.idMeal === item.dish.idMeal)
+      );
+      
+      // Перемешиваем оставшиеся и берем нужное количество
+      for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+      }
+      
+      const additional = remaining.slice(0, count - selected.length);
       selected.push(...additional);
     }
     
