@@ -227,10 +227,12 @@ export default function MenuGenerator() {
         </div>
 
         {/* Быстрые фильтры */}
+        {/*
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-3">Быстрые фильтры:</h3>
           <QuickPreferences onQuickFilter={applyQuickFilter} />
         </div>
+        */}
 
         {/* Селектор типа питания */}
         <div className="mb-8">
