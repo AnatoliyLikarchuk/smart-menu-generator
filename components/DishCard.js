@@ -6,7 +6,7 @@ import {
   HeartOff, 
   Clock, 
   ChefHat, 
-  Star, 
+  Flame, 
   ExternalLink,
   Share2,
   BookmarkPlus,
@@ -120,26 +120,11 @@ export default function DishCard({
     return ingredients;
   };
 
-  // Получение цвета оценки
-  const getScoreColor = (category) => {
-    switch (category) {
-      case 'excellent': return 'text-green-600 bg-green-100';
-      case 'good': return 'text-blue-600 bg-blue-100';
-      case 'average': return 'text-yellow-600 bg-yellow-100';
-      case 'poor': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  // Получение текста категории оценки
-  const getScoreCategoryText = (category) => {
-    switch (category) {
-      case 'excellent': return 'Отлично';
-      case 'good': return 'Хорошо';
-      case 'average': return 'Неплохо';
-      case 'poor': return 'Так себе';
-      default: return 'Оценка';
-    }
+  // Получение цвета калорийности
+  const getCalorieColor = (calorieCategory) => {
+    if (!calorieCategory) return 'text-gray-600 bg-gray-100';
+    
+    return `${calorieCategory.textColor} ${calorieCategory.bgColor}`;
   };
 
   // Форматирование времени приготовления
@@ -238,12 +223,12 @@ export default function DishCard({
             </span>
           </div>
 
-          {/* Оценка блюда */}
-          {showDetails && score && (
+          {/* Калорийность блюда */}
+          {showDetails && analysis && analysis.calories && (
             <div className="absolute top-4 right-4">
-              <div className={`flex items-center px-3 py-1 rounded-full text-sm font-bold ${getScoreColor(scoreCategory)}`}>
-                <Star className="w-4 h-4 mr-1" />
-                {score.toFixed(1)}
+              <div className={`flex items-center px-3 py-1 rounded-full text-sm font-bold ${getCalorieColor(analysis.calorieCategory)}`}>
+                <Flame className="w-4 h-4 mr-1" />
+                {analysis.calories} ккал
               </div>
             </div>
           )}

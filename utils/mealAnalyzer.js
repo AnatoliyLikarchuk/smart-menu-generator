@@ -5,6 +5,7 @@ import {
   COMPLEXITY_LEVELS, 
   COOKING_TIME_CATEGORIES 
 } from './constants.js';
+import CalorieService from '../services/calorieService.js';
 
 /**
  * Извлекает время приготовления из текста инструкций
@@ -302,6 +303,7 @@ export function analyzeDish(dish) {
   const cookingMethod = detectCookingMethod(dish.strInstructions);
   const vegetableCount = countVegetables(dish);
   const nutrition = analyzeNutrition(dish);
+  const calories = CalorieService.calculateDishCalories(dish);
   
   // Определяем категории
   let timeCategory = 'medium';
@@ -333,6 +335,13 @@ export function analyzeDish(dish) {
     // Питательность
     nutrition,
     
+    // Калорийность
+    calories: calories.calories,
+    calorieCategory: calories.category,
+    cookingMethodCalories: calories.cookingMethod,
+    isLowCalorie: calories.calories < 400,
+    isHighCalorie: calories.calories > 700,
+    
     // Дополнительные флаги
     isVegetarian: proteins.length === 0 || proteins.every(p => ['tofu', 'beans', 'lentils', 'eggs'].includes(p)),
     isSeafood: proteins.some(p => ['fish', 'salmon', 'tuna', 'shrimp'].includes(p)),
@@ -340,7 +349,7 @@ export function analyzeDish(dish) {
     isComplex: complexity > 10 || cookingTime > 60,
     
     // Мета-информация
-    analysisVersion: '1.0',
+    analysisVersion: '1.1',
     analyzedAt: new Date().toISOString()
   };
 }
