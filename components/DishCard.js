@@ -47,6 +47,7 @@ export default function DishCard({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showIngredients, setShowIngredients] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [isFavorite, setIsFavorite] = useState(StorageService.isFavorite(dish.idMeal));
   const [translatedDish, setTranslatedDish] = useState(null);
   const [translating, setTranslating] = useState(false);
@@ -59,10 +60,41 @@ export default function DishCard({
       
       setTranslating(true);
       try {
-        const translated = await TranslationService.translateDish(dish, true, true);
-        setTranslatedDish(translated);
+        // Попробуем использовать серверный API для лучшего качества переводов
+        const response = await fetch('/api/translate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            type: 'dish',
+            data: dish,
+            options: {
+              translateIngredients: true,
+              useAPI: true
+            }
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setTranslatedDish(result.data);
+          } else {
+            throw new Error(result.error);
+          }
+        } else {
+          throw new Error('Ошибка сервера переводов');
+        }
       } catch (error) {
-        console.warn('[DishCard] Ошибка перевода:', error.message);
+        console.warn('[DishCard] Ошибка серверного перевода, используем клиентский:', error.message);
+        // Fallback на клиентский TranslationService
+        try {
+          const translated = await TranslationService.translateDish(dish, true, true);
+          setTranslatedDish(translated);
+        } catch (fallbackError) {
+          console.warn('[DishCard] Ошибка клиентского перевода:', fallbackError.message);
+        }
       } finally {
         setTranslating(false);
       }
@@ -324,6 +356,55 @@ export default function DishCard({
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Инструкции приготовления */}
+        {dish.strInstructions && (
+          <div className="mb-4">
+            <button
+              onClick={() => setShowInstructions(!showInstructions)}
+              className="flex items-center text-gray-700 hover:text-blue-600 transition-colors mb-2"
+            >
+              <ChefHat className="w-4 h-4 mr-2" />
+              <span className="text-sm font-medium">
+                Инструкции приготовления
+              </span>
+            </button>
+            
+            {showInstructions && (
+              <div className="bg-gray-50 rounded-lg p-4 max-h-80 overflow-y-auto">
+                {translating && showRussian && (
+                  <div className="flex items-center text-sm text-gray-500 mb-3">
+                    <Languages className="w-4 h-4 mr-2 animate-pulse" />
+                    Переводим инструкции...
+                  </div>
+                )}
+                <div className="text-gray-800 leading-relaxed text-sm">
+                  {showRussian && translatedDish?.strInstructionsRu 
+                    ? (
+                      <div>
+                        <p className="whitespace-pre-line">
+                          {translatedDish.strInstructionsRu}
+                        </p>
+                        <details className="mt-3 text-xs text-gray-500">
+                          <summary className="cursor-pointer hover:text-gray-700">
+                            Показать оригинал
+                          </summary>
+                          <p className="mt-2 whitespace-pre-line font-mono">
+                            {dish.strInstructions}
+                          </p>
+                        </details>
+                      </div>
+                    )
+                    : (
+                      <p className="whitespace-pre-line">
+                        {dish.strInstructions}
+                      </p>
+                    )}
                 </div>
               </div>
             )}

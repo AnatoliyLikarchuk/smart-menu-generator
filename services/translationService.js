@@ -1,4 +1,4 @@
-// Сервис перевода с использованием LibreTranslate API и локального кэширования
+// Сервис перевода с использованием DeepSeek API и локального кэширования
 
 import { 
   translateDishName, 
@@ -6,6 +6,7 @@ import {
   translateCategory, 
   translateArea 
 } from '../data/translations.js';
+import DeepSeekService from './deepSeekService.js';
 
 /**
  * Сервис для перевода текста на русский язык
@@ -16,6 +17,7 @@ export class TranslationService {
   static CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 дней
   static LIBRE_TRANSLATE_URL = 'https://libretranslate.com/translate';
   static LIBRE_TRANSLATE_BACKUP_URL = 'https://translate.argosopentech.com/translate';
+  static USE_DEEPSEEK = true; // Использовать DeepSeek API по умолчанию
   
   /**
    * Переводит название блюда
@@ -38,10 +40,18 @@ export class TranslationService {
       return cached;
     }
     
-    // Если кэша нет и разрешен API, переводим через LibreTranslate
-    if (useAPI && typeof window !== 'undefined') {
+    // Если кэша нет и разрешен API, переводим через DeepSeek или LibreTranslate
+    if (useAPI) {
       try {
-        const translated = await this.translateWithAPI(dishName);
+        let translated;
+        if (this.USE_DEEPSEEK && typeof window === 'undefined') {
+          // Серверная среда - используем DeepSeek
+          translated = await DeepSeekService.translateDishName(dishName);
+        } else if (typeof window !== 'undefined') {
+          // Клиентская среда - используем LibreTranslate как fallback
+          translated = await this.translateWithAPI(dishName);
+        }
+        
         if (translated && translated !== dishName) {
           this.setCachedTranslation(dishName, translated);
           return translated;
@@ -75,10 +85,18 @@ export class TranslationService {
       return cached;
     }
     
-    // Для ингредиентов по умолчанию не используем API (слишком много запросов)
-    if (useAPI && typeof window !== 'undefined') {
+    // Для ингредиентов используем API при необходимости
+    if (useAPI) {
       try {
-        const translated = await this.translateWithAPI(ingredient);
+        let translated;
+        if (this.USE_DEEPSEEK && typeof window === 'undefined') {
+          // Серверная среда - используем DeepSeek
+          translated = await DeepSeekService.translateIngredient(ingredient);
+        } else if (typeof window !== 'undefined') {
+          // Клиентская среда - используем LibreTranslate как fallback
+          translated = await this.translateWithAPI(ingredient);
+        }
+        
         if (translated && translated !== ingredient) {
           this.setCachedTranslation(ingredient.toLowerCase(), translated);
           return translated;
@@ -100,6 +118,49 @@ export class TranslationService {
   static async translateIngredients(ingredients, useAPI = true) {
     if (!Array.isArray(ingredients)) return [];
     
+    // Если используем DeepSeek и находимся в серверной среде, используем пакетный перевод
+    if (this.USE_DEEPSEEK && typeof window === 'undefined' && useAPI) {
+      try {
+        // Фильтруем только те ингредиенты, которых нет в статическом словаре
+        const toTranslate = [];
+        const translations = [];
+        
+        for (const ingredient of ingredients) {
+          const staticTranslation = translateIngredient(ingredient);
+          if (staticTranslation !== ingredient) {
+            translations.push(staticTranslation);
+          } else {
+            const cached = this.getCachedTranslation(ingredient.toLowerCase());
+            if (cached) {
+              translations.push(cached);
+            } else {
+              toTranslate.push({ ingredient, index: translations.length });
+              translations.push(null); // Заполним позже
+            }
+          }
+        }
+        
+        // Переводим неизвестные ингредиенты пакетом
+        if (toTranslate.length > 0) {
+          const batchIngredients = toTranslate.map(item => item.ingredient);
+          const batchTranslations = await DeepSeekService.translateIngredientsBatch(batchIngredients);
+          
+          // Заполняем переводы и кэшируем
+          for (let i = 0; i < toTranslate.length; i++) {
+            const { ingredient, index } = toTranslate[i];
+            const translation = batchTranslations[i] || ingredient;
+            translations[index] = translation;
+            this.setCachedTranslation(ingredient.toLowerCase(), translation);
+          }
+        }
+        
+        return translations;
+      } catch (error) {
+        console.warn('[TranslationService] Ошибка пакетного перевода:', error.message);
+      }
+    }
+    
+    // Fallback: переводим по одному
     const translations = await Promise.all(
       ingredients.map(ingredient => this.translateIngredient(ingredient, useAPI))
     );
@@ -288,8 +349,20 @@ export class TranslationService {
       // Переводим ингредиенты
       if (translateIngredients) {
         const ingredients = this.extractIngredients(dish);
-        const translatedIngredients = await this.translateIngredients(ingredients, true); // API включен для ингредиентов
+        const translatedIngredients = await this.translateIngredients(ingredients, useAPI);
         translatedDish.ingredientsRu = translatedIngredients;
+      }
+      
+      // Переводим инструкции приготовления (новая функция)
+      if (dish.strInstructions && this.USE_DEEPSEEK && typeof window === 'undefined') {
+        try {
+          translatedDish.strInstructionsRu = await DeepSeekService.translateInstructions(
+            dish.strInstructions,
+            dish.strMeal
+          );
+        } catch (error) {
+          console.warn('[TranslationService] Ошибка перевода инструкций:', error.message);
+        }
       }
       
       return translatedDish;
