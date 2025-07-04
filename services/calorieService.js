@@ -4,7 +4,8 @@ import {
   getIngredientCalories, 
   MEASUREMENT_WEIGHTS, 
   COOKING_METHOD_MULTIPLIERS,
-  getCalorieCategory
+  getCalorieCategory,
+  getMealTypeByTime
 } from '../data/calorieDatabase.js';
 
 /**
@@ -15,10 +16,14 @@ export class CalorieService {
   /**
    * Рассчитывает общую калорийность блюда
    * @param {object} dish - объект блюда из API
+   * @param {string} mealType - тип приема пищи (опционально)
    * @returns {object} объект с калориями и категорией
    */
-  static calculateDishCalories(dish) {
-    if (!dish) return { calories: 0, category: getCalorieCategory(0) };
+  static calculateDishCalories(dish, mealType = null) {
+    // Определяем тип приема пищи по времени если не передан
+    const actualMealType = mealType || getMealTypeByTime();
+    
+    if (!dish) return { calories: 0, category: getCalorieCategory(0, actualMealType) };
     
     try {
       let totalCalories = 0;
@@ -40,14 +45,15 @@ export class CalorieService {
       // Округляем до целого
       totalCalories = Math.round(totalCalories);
       
-      // Определяем категорию
-      const category = getCalorieCategory(totalCalories);
+      // Определяем категорию с учетом типа приема пищи
+      const category = getCalorieCategory(totalCalories, actualMealType);
       
-      console.log(`[CalorieService] Рассчитано ${totalCalories} ккал для "${dish.strMeal}"`);
+      console.log(`[CalorieService] Рассчитано ${totalCalories} ккал для "${dish.strMeal}" (${actualMealType}: ${category.label})`);
       
       return {
         calories: totalCalories,
         category: category,
+        mealType: actualMealType,
         cookingMethod: this.detectCookingMethod(dish.strInstructions),
         ingredientCount: ingredients.length
       };
@@ -55,7 +61,7 @@ export class CalorieService {
     } catch (error) {
       console.warn('[CalorieService] Ошибка расчета калорий:', error.message);
       // Fallback: оценка по категории блюда
-      return this.estimateCaloriesByCategory(dish);
+      return this.estimateCaloriesByCategory(dish, actualMealType);
     }
   }
   
@@ -307,9 +313,10 @@ export class CalorieService {
   /**
    * Оценивает калории по категории блюда (fallback)
    * @param {object} dish - объект блюда
+   * @param {string} mealType - тип приема пищи
    * @returns {object} оценка калорий
    */
-  static estimateCaloriesByCategory(dish) {
+  static estimateCaloriesByCategory(dish, mealType = 'GENERAL') {
     const category = dish.strCategory ? dish.strCategory.toLowerCase() : '';
     
     let estimatedCalories = 500; // По умолчанию
@@ -334,13 +341,14 @@ export class CalorieService {
       estimatedCalories = 350;
     }
     
-    const categoryObj = getCalorieCategory(estimatedCalories);
+    const categoryObj = getCalorieCategory(estimatedCalories, mealType);
     
-    console.log(`[CalorieService] Оценка по категории: ${estimatedCalories} ккал для "${dish.strMeal}"`);
+    console.log(`[CalorieService] Оценка по категории: ${estimatedCalories} ккал для "${dish.strMeal}" (${mealType}: ${categoryObj.label})`);
     
     return {
       calories: estimatedCalories,
       category: categoryObj,
+      mealType: mealType,
       cookingMethod: 'estimated',
       ingredientCount: 0,
       isEstimated: true
