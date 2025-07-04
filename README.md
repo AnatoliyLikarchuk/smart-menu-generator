@@ -52,6 +52,9 @@ npm start
 1. Получите API ключ DeepSeek на [platform.deepseek.com](https://platform.deepseek.com/)
 2. Скопируйте `.env.local.example` в `.env.local`
 3. Добавьте ваш ключ: `DEEPSEEK_API_KEY=your_api_key_here`
+4. **Настройте приоритет переводов:**
+   - `DEEPSEEK_PRIORITY=true` - DeepSeek первым (максимальное качество)
+   - `DEEPSEEK_PRIORITY=false` - статический словарь первым (экономия API)
 
 ## 🚀 Деплой на Vercel
 

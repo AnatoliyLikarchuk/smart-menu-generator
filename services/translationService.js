@@ -18,6 +18,7 @@ export class TranslationService {
   static LIBRE_TRANSLATE_URL = 'https://libretranslate.com/translate';
   static LIBRE_TRANSLATE_BACKUP_URL = 'https://translate.argosopentech.com/translate';
   static USE_DEEPSEEK = true; // Использовать DeepSeek API по умолчанию
+  static DEEPSEEK_PRIORITY = process.env.DEEPSEEK_PRIORITY !== 'false'; // DeepSeek приоритет
   
   /**
    * Переводит название блюда
@@ -28,36 +29,60 @@ export class TranslationService {
   static async translateDishName(dishName, useAPI = true) {
     if (!dishName) return '';
     
-    // Сначала проверяем статический словарь
+    // Новая логика: DeepSeek → статический словарь → кэш → LibreTranslate
+    if (this.DEEPSEEK_PRIORITY && this.USE_DEEPSEEK && useAPI && typeof window === 'undefined') {
+      try {
+        // 1. Сначала пробуем DeepSeek API для максимального качества
+        const deepSeekTranslation = await DeepSeekService.translateDishName(dishName);
+        if (deepSeekTranslation && deepSeekTranslation !== dishName) {
+          this.setCachedTranslation(dishName, deepSeekTranslation);
+          console.log(`[TranslationService] DeepSeek перевод: "${dishName}" -> "${deepSeekTranslation}"`);
+          return deepSeekTranslation;
+        }
+      } catch (error) {
+        console.warn('[TranslationService] DeepSeek недоступен, используем fallback:', error.message);
+      }
+    }
+    
+    // 2. Fallback: проверяем статический словарь
     const staticTranslation = translateDishName(dishName);
     if (staticTranslation !== dishName) {
+      console.log(`[TranslationService] Статический словарь: "${dishName}" -> "${staticTranslation}"`);
       return staticTranslation;
     }
     
-    // Если в словаре нет, пытаемся получить из кэша
+    // 3. Fallback: проверяем кэш
     const cached = this.getCachedTranslation(dishName);
     if (cached) {
+      console.log(`[TranslationService] Кэш: "${dishName}" -> "${cached}"`);
       return cached;
     }
     
-    // Если кэша нет и разрешен API, переводим через DeepSeek или LibreTranslate
-    if (useAPI) {
+    // 4. Fallback: LibreTranslate для клиентской среды или если DeepSeek отключен
+    if (useAPI && typeof window !== 'undefined') {
       try {
-        let translated;
-        if (this.USE_DEEPSEEK && typeof window === 'undefined') {
-          // Серверная среда - используем DeepSeek
-          translated = await DeepSeekService.translateDishName(dishName);
-        } else if (typeof window !== 'undefined') {
-          // Клиентская среда - используем LibreTranslate как fallback
-          translated = await this.translateWithAPI(dishName);
-        }
-        
+        const translated = await this.translateWithAPI(dishName);
         if (translated && translated !== dishName) {
           this.setCachedTranslation(dishName, translated);
+          console.log(`[TranslationService] LibreTranslate: "${dishName}" -> "${translated}"`);
           return translated;
         }
       } catch (error) {
-        console.warn('[TranslationService] Ошибка перевода названия блюда:', error.message);
+        console.warn('[TranslationService] Ошибка LibreTranslate:', error.message);
+      }
+    }
+    
+    // 5. Если DeepSeek приоритет отключен, используем старую логику
+    if (!this.DEEPSEEK_PRIORITY && this.USE_DEEPSEEK && useAPI && typeof window === 'undefined') {
+      try {
+        const deepSeekTranslation = await DeepSeekService.translateDishName(dishName);
+        if (deepSeekTranslation && deepSeekTranslation !== dishName) {
+          this.setCachedTranslation(dishName, deepSeekTranslation);
+          console.log(`[TranslationService] DeepSeek (низкий приоритет): "${dishName}" -> "${deepSeekTranslation}"`);
+          return deepSeekTranslation;
+        }
+      } catch (error) {
+        console.warn('[TranslationService] DeepSeek ошибка (низкий приоритет):', error.message);
       }
     }
     
@@ -73,36 +98,60 @@ export class TranslationService {
   static async translateIngredient(ingredient, useAPI = true) {
     if (!ingredient || !ingredient.trim()) return '';
     
-    // Сначала проверяем статический словарь
+    // Новая логика: DeepSeek → статический словарь → кэш → LibreTranslate
+    if (this.DEEPSEEK_PRIORITY && this.USE_DEEPSEEK && useAPI && typeof window === 'undefined') {
+      try {
+        // 1. Сначала пробуем DeepSeek API для максимального качества
+        const deepSeekTranslation = await DeepSeekService.translateIngredient(ingredient);
+        if (deepSeekTranslation && deepSeekTranslation !== ingredient) {
+          this.setCachedTranslation(ingredient.toLowerCase(), deepSeekTranslation);
+          console.log(`[TranslationService] DeepSeek ингредиент: "${ingredient}" -> "${deepSeekTranslation}"`);
+          return deepSeekTranslation;
+        }
+      } catch (error) {
+        console.warn('[TranslationService] DeepSeek недоступен для ингредиента, используем fallback:', error.message);
+      }
+    }
+    
+    // 2. Fallback: проверяем статический словарь
     const staticTranslation = translateIngredient(ingredient);
     if (staticTranslation !== ingredient) {
+      console.log(`[TranslationService] Статический словарь ингредиент: "${ingredient}" -> "${staticTranslation}"`);
       return staticTranslation;
     }
     
-    // Проверяем кэш
+    // 3. Fallback: проверяем кэш
     const cached = this.getCachedTranslation(ingredient.toLowerCase());
     if (cached) {
+      console.log(`[TranslationService] Кэш ингредиент: "${ingredient}" -> "${cached}"`);
       return cached;
     }
     
-    // Для ингредиентов используем API при необходимости
-    if (useAPI) {
+    // 4. Fallback: LibreTranslate для клиентской среды
+    if (useAPI && typeof window !== 'undefined') {
       try {
-        let translated;
-        if (this.USE_DEEPSEEK && typeof window === 'undefined') {
-          // Серверная среда - используем DeepSeek
-          translated = await DeepSeekService.translateIngredient(ingredient);
-        } else if (typeof window !== 'undefined') {
-          // Клиентская среда - используем LibreTranslate как fallback
-          translated = await this.translateWithAPI(ingredient);
-        }
-        
+        const translated = await this.translateWithAPI(ingredient);
         if (translated && translated !== ingredient) {
           this.setCachedTranslation(ingredient.toLowerCase(), translated);
+          console.log(`[TranslationService] LibreTranslate ингредиент: "${ingredient}" -> "${translated}"`);
           return translated;
         }
       } catch (error) {
-        console.warn('[TranslationService] Ошибка перевода ингредиента:', error.message);
+        console.warn('[TranslationService] Ошибка LibreTranslate ингредиент:', error.message);
+      }
+    }
+    
+    // 5. Если DeepSeek приоритет отключен, используем старую логику
+    if (!this.DEEPSEEK_PRIORITY && this.USE_DEEPSEEK && useAPI && typeof window === 'undefined') {
+      try {
+        const deepSeekTranslation = await DeepSeekService.translateIngredient(ingredient);
+        if (deepSeekTranslation && deepSeekTranslation !== ingredient) {
+          this.setCachedTranslation(ingredient.toLowerCase(), deepSeekTranslation);
+          console.log(`[TranslationService] DeepSeek ингредиент (низкий приоритет): "${ingredient}" -> "${deepSeekTranslation}"`);
+          return deepSeekTranslation;
+        }
+      } catch (error) {
+        console.warn('[TranslationService] DeepSeek ошибка ингредиент (низкий приоритет):', error.message);
       }
     }
     
@@ -118,8 +167,31 @@ export class TranslationService {
   static async translateIngredients(ingredients, useAPI = true) {
     if (!Array.isArray(ingredients)) return [];
     
-    // Если используем DeepSeek и находимся в серверной среде, используем пакетный перевод
-    if (this.USE_DEEPSEEK && typeof window === 'undefined' && useAPI) {
+    // Новая логика с приоритетом DeepSeek
+    if (this.DEEPSEEK_PRIORITY && this.USE_DEEPSEEK && typeof window === 'undefined' && useAPI) {
+      try {
+        console.log(`[TranslationService] Пакетный перевод ${ingredients.length} ингредиентов через DeepSeek (приоритет)`);
+        
+        // Сначала пробуем DeepSeek для всех ингредиентов
+        const batchTranslations = await DeepSeekService.translateIngredientsBatch(ingredients);
+        
+        // Кэшируем успешные переводы
+        for (let i = 0; i < ingredients.length; i++) {
+          const ingredient = ingredients[i];
+          const translation = batchTranslations[i];
+          if (translation && translation !== ingredient) {
+            this.setCachedTranslation(ingredient.toLowerCase(), translation);
+          }
+        }
+        
+        return batchTranslations;
+      } catch (error) {
+        console.warn('[TranslationService] DeepSeek пакетный перевод неудачен, используем fallback:', error.message);
+      }
+    }
+    
+    // Fallback: старая логика (статический словарь → кэш → DeepSeek по одному)
+    if (this.USE_DEEPSEEK && typeof window === 'undefined' && useAPI && !this.DEEPSEEK_PRIORITY) {
       try {
         // Фильтруем только те ингредиенты, которых нет в статическом словаре
         const toTranslate = [];
@@ -142,6 +214,7 @@ export class TranslationService {
         
         // Переводим неизвестные ингредиенты пакетом
         if (toTranslate.length > 0) {
+          console.log(`[TranslationService] Пакетный перевод ${toTranslate.length} неизвестных ингредиентов через DeepSeek (низкий приоритет)`);
           const batchIngredients = toTranslate.map(item => item.ingredient);
           const batchTranslations = await DeepSeekService.translateIngredientsBatch(batchIngredients);
           
@@ -156,11 +229,12 @@ export class TranslationService {
         
         return translations;
       } catch (error) {
-        console.warn('[TranslationService] Ошибка пакетного перевода:', error.message);
+        console.warn('[TranslationService] Ошибка пакетного перевода (низкий приоритет):', error.message);
       }
     }
     
-    // Fallback: переводим по одному
+    // Fallback: переводим по одному (используется при ошибках или клиентской среде)
+    console.log(`[TranslationService] Перевод ${ingredients.length} ингредиентов по одному`);
     const translations = await Promise.all(
       ingredients.map(ingredient => this.translateIngredient(ingredient, useAPI))
     );
