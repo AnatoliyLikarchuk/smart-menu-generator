@@ -370,7 +370,7 @@ export class DishService {
       
       // Фильтруем и оцениваем
       const filteredDishes = FilterService.filterByPreferences(dishes, userPreferences);
-      const scoredDishes = ScoringService.scoreDishes(filteredDishes, mealType, userPreferences, context);
+      const scoredDishes = await ScoringService.scoreDishes(filteredDishes, mealType, userPreferences, context);
       
       // Выбираем разнообразные блюда
       const selectedDishes = FilterService.selectDiverseDishes(scoredDishes, count);
