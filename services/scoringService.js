@@ -33,7 +33,7 @@ export class ScoringService {
     }
     
     return dishes.map(dish => {
-      const analysis = analyzeDish(dish);
+      const analysis = analyzeDish(dish, mealType);
       const score = this.calculateDishScore(dish, analysis, mealType, userPreferences, context);
       
       return {

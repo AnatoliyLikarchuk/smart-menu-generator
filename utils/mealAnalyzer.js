@@ -294,16 +294,25 @@ export function analyzeNutrition(dish) {
 /**
  * Главная функция анализа блюда - объединяет все виды анализа
  * @param {object} dish - объект блюда из API
+ * @param {string} mealType - тип приема пищи (breakfast, lunch, dinner)
  * @returns {object} полный анализ блюда
  */
-export function analyzeDish(dish) {
+export function analyzeDish(dish, mealType = null) {
   const cookingTime = extractCookingTime(dish.strInstructions);
   const complexity = calculateComplexity(dish);
   const proteins = detectProteinType(dish);
   const cookingMethod = detectCookingMethod(dish.strInstructions);
   const vegetableCount = countVegetables(dish);
   const nutrition = analyzeNutrition(dish);
-  const calories = CalorieService.calculateDishCalories(dish);
+  // Конвертируем тип питания в формат для CalorieService
+  const mealTypeMapping = {
+    'breakfast': 'BREAKFAST',
+    'lunch': 'LUNCH', 
+    'dinner': 'DINNER'
+  };
+  const calorieServiceMealType = mealType ? mealTypeMapping[mealType] : null;
+  
+  const calories = CalorieService.calculateDishCalories(dish, calorieServiceMealType);
   
   // Определяем категории
   let timeCategory = 'medium';
