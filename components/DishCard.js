@@ -285,12 +285,14 @@ export default function DishCard({
               </span>
             </div>
 
-            {/* Категория оценки */}
-            <div className="flex items-center">
-              <div className={`px-2 py-1 rounded-md text-xs font-medium ${getScoreColor(scoreCategory)}`}>
-                {getScoreCategoryText(scoreCategory)}
+            {/* Дополнительная информация о калориях */}
+            {analysis && analysis.calories && (
+              <div className="flex items-center">
+                <div className="px-2 py-1 rounded-md text-xs font-medium text-gray-600 bg-gray-100">
+                  {analysis.isLowCalorie ? 'Легкое' : analysis.isHighCalorie ? 'Сытное' : 'Умеренное'}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
