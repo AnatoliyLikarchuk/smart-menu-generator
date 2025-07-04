@@ -25,25 +25,42 @@ export class ScoringService {
    * @param {string} mealType - тип питания
    * @param {object} userPreferences - предпочтения пользователя
    * @param {object} context - контекстуальная информация
-   * @returns {Array} массив блюд с оценками
+   * @returns {Promise<Array>} массив блюд с оценками
    */
-  static scoreDishes(dishes, mealType, userPreferences = {}, context = null) {
+  static async scoreDishes(dishes, mealType, userPreferences = {}, context = null) {
     if (!context) {
       context = getContextualPreferences();
     }
     
-    return dishes.map(dish => {
-      const analysis = analyzeDish(dish, mealType);
-      const score = this.calculateDishScore(dish, analysis, mealType, userPreferences, context);
-      
-      return {
-        dish,
-        analysis,
-        score,
-        scoreCategory: getScoreCategory(score),
-        isRecommended: score >= SCORE_THRESHOLDS.GOOD
-      };
-    }).filter(item => item.score >= MIN_DISH_SCORE); // Отфильтровываем блюда с очень низкой оценкой
+    // Используем Promise.all для параллельного анализа блюд
+    const scoredDishes = await Promise.all(
+      dishes.map(async dish => {
+        try {
+          const analysis = await analyzeDish(dish, mealType);
+          const score = this.calculateDishScore(dish, analysis, mealType, userPreferences, context);
+          
+          return {
+            dish,
+            analysis,
+            score,
+            scoreCategory: getScoreCategory(score),
+            isRecommended: score >= SCORE_THRESHOLDS.GOOD
+          };
+        } catch (error) {
+          console.warn(`[ScoringService] Ошибка анализа блюда "${dish.strMeal}":`, error.message);
+          // Возвращаем блюдо с низкой оценкой при ошибке
+          return {
+            dish,
+            analysis: { error: true },
+            score: 0,
+            scoreCategory: getScoreCategory(0),
+            isRecommended: false
+          };
+        }
+      })
+    );
+    
+    return scoredDishes.filter(item => item.score >= MIN_DISH_SCORE); // Отфильтровываем блюда с очень низкой оценкой
   }
   
   /**

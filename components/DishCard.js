@@ -224,11 +224,11 @@ export default function DishCard({
           </div>
 
           {/* Калорийность блюда */}
-          {showDetails && analysis && analysis.calories && (
+          {showDetails && analysis && analysis.calorieCategory && (
             <div className="absolute top-4 right-4">
               <div className={`flex items-center px-3 py-1 rounded-full text-sm font-bold ${getCalorieColor(analysis.calorieCategory)}`}>
                 <Flame className="w-4 h-4 mr-1" />
-                {analysis.calories} ккал
+                {analysis.calories ? `${analysis.calories} ккал` : analysis.calorieCategory.label}
               </div>
             </div>
           )}
@@ -286,7 +286,7 @@ export default function DishCard({
             </div>
 
             {/* Контекстная категория калорийности */}
-            {analysis && analysis.calories && analysis.calorieCategory && (
+            {analysis && analysis.calorieCategory && (
               <div className="flex items-center">
                 <div className={`px-2 py-1 rounded-md text-xs font-medium ${analysis.calorieCategory.textColor} ${analysis.calorieCategory.bgColor}`}>
                   {analysis.calorieCategory.label}

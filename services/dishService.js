@@ -51,8 +51,8 @@ export class DishService {
         return await this.getFallbackDish(mealType, userPreferences);
       }
       
-      // Оцениваем блюда
-      const scoredDishes = ScoringService.scoreDishes(
+      // Оцениваем блюда (теперь асинхронно)
+      const scoredDishes = await ScoringService.scoreDishes(
         filteredDishes, 
         mealType, 
         userPreferences, 

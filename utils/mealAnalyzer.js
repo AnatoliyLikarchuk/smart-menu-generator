@@ -295,9 +295,9 @@ export function analyzeNutrition(dish) {
  * Главная функция анализа блюда - объединяет все виды анализа
  * @param {object} dish - объект блюда из API
  * @param {string} mealType - тип приема пищи (breakfast, lunch, dinner)
- * @returns {object} полный анализ блюда
+ * @returns {Promise<object>} полный анализ блюда
  */
-export function analyzeDish(dish, mealType = null) {
+export async function analyzeDish(dish, mealType = null) {
   const cookingTime = extractCookingTime(dish.strInstructions);
   const complexity = calculateComplexity(dish);
   const proteins = detectProteinType(dish);
@@ -312,7 +312,24 @@ export function analyzeDish(dish, mealType = null) {
   };
   const calorieServiceMealType = mealType ? mealTypeMapping[mealType] : null;
   
-  const calories = CalorieService.calculateDishCalories(dish, calorieServiceMealType);
+  // Вызываем асинхронно новую ИИ-систему калорий
+  let calories;
+  try {
+    calories = await CalorieService.calculateDishCalories(dish, calorieServiceMealType);
+  } catch (error) {
+    console.warn('[mealAnalyzer] Ошибка асинхронного расчета калорий:', error.message);
+    // Fallback синхронный результат
+    calories = {
+      calories: null,
+      category: {
+        label: 'Калорийность не определена',
+        color: 'gray',
+        bgColor: 'bg-gray-100',
+        textColor: 'text-gray-600'
+      },
+      error: true
+    };
+  }
   
   // Определяем категории
   let timeCategory = 'medium';
@@ -344,12 +361,11 @@ export function analyzeDish(dish, mealType = null) {
     // Питательность
     nutrition,
     
-    // Калорийность
+    // Калорийность (теперь может быть null при ошибке ИИ)
     calories: calories.calories,
     calorieCategory: calories.category,
-    cookingMethodCalories: calories.cookingMethod,
-    isLowCalorie: calories.calories < 400,
-    isHighCalorie: calories.calories > 700,
+    isLowCalorie: calories.calories !== null && calories.calories < 400,
+    isHighCalorie: calories.calories !== null && calories.calories > 700,
     
     // Дополнительные флаги
     isVegetarian: proteins.length === 0 || proteins.every(p => ['tofu', 'beans', 'lentils', 'eggs'].includes(p)),
