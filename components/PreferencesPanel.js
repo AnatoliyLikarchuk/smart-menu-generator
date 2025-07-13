@@ -51,7 +51,6 @@ export default function PreferencesPanel({
     favorites: [],
     blacklist: [],
     history: [],
-    maxCookingTime: 60,
     preferredComplexity: 'any', // 'simple', 'medium', 'complex', 'any'
     ...DEFAULT_CUISINE_PREFERENCES
   };
@@ -193,7 +192,8 @@ export default function PreferencesPanel({
       {isOpen && (
         <div className="p-6 space-y-6">
           
-          {/* Диетические ограничения */}
+          {/* Диетические ограничения - скрыты */}
+          {false && (
           <div>
             <h4 className="text-md font-semibold text-gray-800 mb-3">
               Диетические ограничения
@@ -230,6 +230,7 @@ export default function PreferencesPanel({
               })}
             </div>
           </div>
+          )}
 
           {/* Нелюбимые ингредиенты */}
           <div>
@@ -281,30 +282,6 @@ export default function PreferencesPanel({
             )}
           </div>
 
-          {/* Предпочтения по времени готовки */}
-          <div>
-            <h4 className="text-md font-semibold text-gray-800 mb-3">
-              Максимальное время готовки
-            </h4>
-            <div className="flex items-center space-x-4">
-              <input
-                type="range"
-                min="15"
-                max="180"
-                step="15"
-                value={currentPrefs.maxCookingTime}
-                onChange={(e) => updatePreferences({ maxCookingTime: parseInt(e.target.value) })}
-                className="flex-1"
-              />
-              <span className="min-w-0 px-3 py-1 bg-gray-100 rounded text-sm font-medium">
-                {currentPrefs.maxCookingTime} мин
-              </span>
-            </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>15 мин</span>
-              <span>3 часа</span>
-            </div>
-          </div>
 
           {/* Предпочтения по сложности */}
           <div>

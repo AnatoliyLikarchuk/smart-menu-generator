@@ -34,7 +34,6 @@ export default function MenuGenerator() {
     favorites: [],
     blacklist: [],
     history: [],
-    maxCookingTime: 60,
     preferredComplexity: 'any'
   });
   

@@ -64,8 +64,7 @@ export const HISTORY_CONFIG = {
 export const DEFAULT_PREFERENCES = {
   dislikedIngredients: [],
   dietaryRestrictions: [],
-  maxCookingTime: 60, // минут
-  preferredComplexity: 'medium',
+  preferredComplexity: 'any',
   
   // Предпочтения по времени дня
   timePreferences: {

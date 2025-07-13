@@ -65,15 +65,14 @@ export class DishService {
         return await this.getFallbackDish(mealType, userPreferences);
       }
       
-      // Фильтруем по предпочитаемой сложности и времени готовки после анализа
+      // Фильтруем по предпочитаемой сложности после анализа
       const complexityFilteredDishes = FilterService.filterByComplexity(scoredDishes, userPreferences);
-      const timeFilteredDishes = FilterService.filterByMaxCookingTime(complexityFilteredDishes, userPreferences);
       
       // Выбираем из каких блюд делать финальный выбор
-      const dishesToSelect = timeFilteredDishes.length > 0 ? timeFilteredDishes : scoredDishes;
+      const dishesToSelect = complexityFilteredDishes.length > 0 ? complexityFilteredDishes : scoredDishes;
       
-      if (timeFilteredDishes.length === 0) {
-        console.log('[DishService] Нет блюд после фильтрации по сложности/времени, используем все');
+      if (complexityFilteredDishes.length === 0) {
+        console.log('[DishService] Нет блюд после фильтрации по сложности, используем все');
       }
       
       // Выбираем лучшее блюдо
@@ -464,14 +463,11 @@ export class DishService {
       const scoredDishes = await ScoringService.scoreDishes(filteredDishes, mealType, userPreferences, context);
       console.log(`[DishService] После оценки: ${scoredDishes.length} блюд`);
       
-      // Фильтруем по предпочитаемой сложности и времени готовки после анализа
+      // Фильтруем по предпочитаемой сложности после анализа
       const complexityFilteredDishes = FilterService.filterByComplexity(scoredDishes, userPreferences);
       console.log(`[DishService] После фильтрации по сложности: ${complexityFilteredDishes.length} блюд`);
       
-      const timeFilteredDishes = FilterService.filterByMaxCookingTime(complexityFilteredDishes, userPreferences);
-      console.log(`[DishService] После фильтрации по времени: ${timeFilteredDishes.length} блюд`);
-      
-      const dishesToSelect = timeFilteredDishes.length > 0 ? timeFilteredDishes : scoredDishes;
+      const dishesToSelect = complexityFilteredDishes.length > 0 ? complexityFilteredDishes : scoredDishes;
       console.log(`[DishService] Блюд для выбора: ${dishesToSelect.length}, запрошено: ${count}`);
       
       // Выбираем разнообразные блюда
