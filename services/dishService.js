@@ -37,7 +37,7 @@ export class DishService {
       console.log(`[DishService] Получение умного блюда для ${mealType}`);
       
       // Получаем блюда из API
-      const dishes = await this.fetchDishesFromAPI(mealType, userPreferences);
+      const dishes = await this.fetchDishesFromAPI(mealType, userPreferences, 1);
       
       if (!dishes || dishes.length === 0) {
         console.log('[DishService] Нет блюд из API, используем fallback');
@@ -115,9 +115,10 @@ export class DishService {
    * Получает блюда из внешнего API (TheMealDB)
    * @param {string} mealType - тип питания
    * @param {object} userPreferences - предпочтения пользователя
+   * @param {number} targetCount - целевое количество блюд (для определения стратегии)
    * @returns {Promise<Array>} массив блюд
    */
-  static async fetchDishesFromAPI(mealType, userPreferences = {}) {
+  static async fetchDishesFromAPI(mealType, userPreferences = {}, targetCount = 1) {
     try {
       const allDishes = [];
       
@@ -145,8 +146,11 @@ export class DishService {
         });
       }
       
+      // Определяем минимальное количество блюд в зависимости от целевого количества
+      const minRequiredDishes = targetCount > 1 ? Math.max(80, targetCount * 25) : 50;
+      
       // Если нет предпочтений по кухням или получено мало блюд, дополняем категориями
-      if (preferredCuisines.length === 0 || allDishes.length < 50) {
+      if (preferredCuisines.length === 0 || allDishes.length < minRequiredDishes) {
         // Определяем категории для запроса с учетом диетических ограничений
         const categories = userPreferences.dietaryRestrictions && userPreferences.dietaryRestrictions.length > 0
           ? getCategoriesWithDietaryRestrictions(mealType, userPreferences.dietaryRestrictions)
@@ -218,7 +222,7 @@ export class DishService {
       }
       
       // Получаем полную информацию для каждого блюда (включая инструкции)
-      const detailedDishes = await this.fetchDetailedDishes(data.meals.slice(0, 25)); // Ограничиваем 25 блюдами на категорию для большего разнообразия
+      const detailedDishes = await this.fetchDetailedDishes(data.meals.slice(0, 30)); // Увеличиваем до 30 блюд на категорию
       
       return detailedDishes;
       
@@ -265,7 +269,7 @@ export class DishService {
       }
       
       // Получаем полную информацию для каждого блюда (включая инструкции)
-      const detailedDishes = await this.fetchDetailedDishes(data.meals.slice(0, 25)); // Ограничиваем 25 блюдами на кухню
+      const detailedDishes = await this.fetchDetailedDishes(data.meals.slice(0, 30)); // Увеличиваем до 30 блюд на кухню
       
       return detailedDishes;
       
@@ -447,7 +451,7 @@ export class DishService {
       const context = getContextualPreferences();
       
       // Получаем блюда из API
-      const dishes = await this.fetchDishesFromAPI(mealType, userPreferences);
+      const dishes = await this.fetchDishesFromAPI(mealType, userPreferences, count);
       
       if (!dishes || dishes.length === 0) {
         return [];
