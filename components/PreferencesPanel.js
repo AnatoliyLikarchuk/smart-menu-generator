@@ -125,14 +125,30 @@ export default function PreferencesPanel({
     updatePreferences({ preferredCuisines: updated });
   };
 
-  // Переключение предпочитаемого региона
+  // Переключение предпочитаемого региона (выбрать/убрать все кухни региона)
   const togglePreferredRegion = (regionId) => {
-    const current = currentPrefs.preferredRegions || [];
-    const updated = current.includes(regionId)
-      ? current.filter(item => item !== regionId)
-      : [...current, regionId];
+    const cuisinesGrouped = getCuisinesGroupedByRegion();
+    const region = Object.values(cuisinesGrouped).find(r => r.id === regionId);
     
-    updatePreferences({ preferredRegions: updated });
+    if (!region) return;
+    
+    const regionCuisineKeys = region.cuisines.map(c => c.key);
+    const currentCuisines = currentPrefs.preferredCuisines || [];
+    
+    // Проверяем, все ли кухни региона уже выбраны
+    const allRegionCuisinesSelected = regionCuisineKeys.every(key => currentCuisines.includes(key));
+    
+    let updatedCuisines;
+    if (allRegionCuisinesSelected) {
+      // Если все выбраны, убираем все кухни региона
+      updatedCuisines = currentCuisines.filter(cuisine => !regionCuisineKeys.includes(cuisine));
+    } else {
+      // Если не все выбраны, добавляем все кухни региона
+      const newCuisines = regionCuisineKeys.filter(cuisine => !currentCuisines.includes(cuisine));
+      updatedCuisines = [...currentCuisines, ...newCuisines];
+    }
+    
+    updatePreferences({ preferredCuisines: updatedCuisines });
   };
 
   // Удаление из избранного
@@ -347,7 +363,10 @@ export default function PreferencesPanel({
               <h5 className="text-sm font-medium text-gray-700 mb-2">По регионам:</h5>
               <div className="space-y-3">
                 {Object.values(getCuisinesGroupedByRegion()).map((region) => {
-                  const isRegionSelected = currentPrefs.preferredRegions?.includes(region.id);
+                  // Проверяем, выбраны ли все кухни региона
+                  const regionCuisineKeys = region.cuisines.map(c => c.key);
+                  const currentCuisines = currentPrefs.preferredCuisines || [];
+                  const isRegionSelected = regionCuisineKeys.length > 0 && regionCuisineKeys.every(key => currentCuisines.includes(key));
                   
                   return (
                     <div key={region.id} className="border rounded-lg p-3">
