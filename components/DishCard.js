@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import StorageService from '../services/storageService.js';
 import TranslationService from '../services/translationService.js';
+import { getCuisineInfo } from '../data/cuisines.js';
 
 /**
  * Компонент карточки блюда
@@ -244,11 +245,21 @@ export default function DishCard({
                   : dish.strMeal}
               </h3>
               {dish.strArea && (
-                <p className="text-white/80 text-sm drop-shadow">
-                  {showRussian && translatedDish?.strAreaRu 
-                    ? `${translatedDish.strAreaRu} кухня`
-                    : `${dish.strArea} кухня`}
-                </p>
+                <div className="flex items-center text-white/80 text-sm drop-shadow">
+                  {(() => {
+                    const cuisineInfo = getCuisineInfo(dish.strArea);
+                    return (
+                      <>
+                        <span className="mr-1">{cuisineInfo.flag}</span>
+                        <span>
+                          {showRussian && translatedDish?.strAreaRu 
+                            ? `${translatedDish.strAreaRu} кухня`
+                            : `${cuisineInfo.name} кухня`}
+                        </span>
+                      </>
+                    );
+                  })()}
+                </div>
               )}
             </div>
             
@@ -291,6 +302,25 @@ export default function DishCard({
                 <div className={`px-2 py-1 rounded-md text-xs font-medium ${analysis.calorieCategory.textColor} ${analysis.calorieCategory.bgColor}`}>
                   {analysis.calorieCategory.label}
                 </div>
+              </div>
+            )}
+
+            {/* Кухня в метриках */}
+            {dish.strArea && (
+              <div className="flex items-center text-gray-600">
+                {(() => {
+                  const cuisineInfo = getCuisineInfo(dish.strArea);
+                  return (
+                    <>
+                      <span className="mr-1">{cuisineInfo.flag}</span>
+                      <span className="text-sm">
+                        {showRussian && translatedDish?.strAreaRu 
+                          ? translatedDish.strAreaRu
+                          : cuisineInfo.name}
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>

@@ -12,9 +12,16 @@ import {
   RotateCcw,
   BarChart3,
   Heart,
-  Clock
+  Clock,
+  Globe
 } from 'lucide-react';
 import StorageService from '../services/storageService.js';
+import { 
+  getCuisinesGroupedByRegion, 
+  getCuisineInfo, 
+  POPULAR_CUISINES,
+  DEFAULT_CUISINE_PREFERENCES
+} from '../data/cuisines.js';
 
 /**
  * Компонент панели настроек пользователя
@@ -45,7 +52,8 @@ export default function PreferencesPanel({
     blacklist: [],
     history: [],
     maxCookingTime: 60,
-    preferredComplexity: 'any' // 'simple', 'medium', 'complex', 'any'
+    preferredComplexity: 'any', // 'simple', 'medium', 'complex', 'any'
+    ...DEFAULT_CUISINE_PREFERENCES
   };
 
   // Объединяем с дефолтными значениями
@@ -106,6 +114,26 @@ export default function PreferencesPanel({
       : [...current, restriction];
     
     updatePreferences({ dietaryRestrictions: updated });
+  };
+
+  // Переключение предпочитаемой кухни
+  const togglePreferredCuisine = (cuisine) => {
+    const current = currentPrefs.preferredCuisines || [];
+    const updated = current.includes(cuisine)
+      ? current.filter(item => item !== cuisine)
+      : [...current, cuisine];
+    
+    updatePreferences({ preferredCuisines: updated });
+  };
+
+  // Переключение предпочитаемого региона
+  const togglePreferredRegion = (regionId) => {
+    const current = currentPrefs.preferredRegions || [];
+    const updated = current.includes(regionId)
+      ? current.filter(item => item !== regionId)
+      : [...current, regionId];
+    
+    updatePreferences({ preferredRegions: updated });
   };
 
   // Удаление из избранного
@@ -305,6 +333,118 @@ export default function PreferencesPanel({
             </div>
           </div>
 
+          {/* Предпочтения по кухням */}
+          <div>
+            <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
+              <Globe className="w-4 h-4 mr-2" />
+              Предпочитаемые кухни
+            </h4>
+            
+            {/* Популярные кухни */}
+            <div className="mb-4">
+              <h5 className="text-sm font-medium text-gray-700 mb-2">Популярные:</h5>
+              <div className="flex flex-wrap gap-2">
+                {POPULAR_CUISINES.map((cuisine) => {
+                  const cuisineInfo = getCuisineInfo(cuisine);
+                  const isSelected = currentPrefs.preferredCuisines?.includes(cuisine);
+                  
+                  return (
+                    <button
+                      key={cuisine}
+                      onClick={() => togglePreferredCuisine(cuisine)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                        isSelected
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {cuisineInfo.flag} {cuisineInfo.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Кухни по регионам */}
+            <div>
+              <h5 className="text-sm font-medium text-gray-700 mb-2">По регионам:</h5>
+              <div className="space-y-3">
+                {Object.values(getCuisinesGroupedByRegion()).map((region) => {
+                  const isRegionSelected = currentPrefs.preferredRegions?.includes(region.id);
+                  
+                  return (
+                    <div key={region.id} className="border rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isRegionSelected}
+                            onChange={() => togglePreferredRegion(region.id)}
+                            className="mr-2"
+                          />
+                          <span className="font-medium text-gray-800">
+                            {region.icon} {region.name}
+                          </span>
+                        </label>
+                        <span className="text-xs text-gray-500">
+                          {region.cuisines.filter(c => currentPrefs.preferredCuisines?.includes(c.key)).length}/{region.cuisines.length}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-1">
+                        {region.cuisines.map((cuisine) => {
+                          const isSelected = currentPrefs.preferredCuisines?.includes(cuisine.key);
+                          
+                          return (
+                            <button
+                              key={cuisine.key}
+                              onClick={() => togglePreferredCuisine(cuisine.key)}
+                              className={`px-2 py-1 text-xs rounded transition-colors ${
+                                isSelected
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                              }`}
+                            >
+                              {cuisine.flag} {cuisine.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Выбранные кухни */}
+            {currentPrefs.preferredCuisines?.length > 0 && (
+              <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                <h5 className="text-sm font-medium text-green-800 mb-2">
+                  Выбрано кухонь: {currentPrefs.preferredCuisines.length}
+                </h5>
+                <div className="flex flex-wrap gap-1">
+                  {currentPrefs.preferredCuisines.map((cuisine) => {
+                    const cuisineInfo = getCuisineInfo(cuisine);
+                    return (
+                      <span
+                        key={cuisine}
+                        className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs rounded"
+                      >
+                        {cuisineInfo.flag} {cuisineInfo.name}
+                        <button
+                          onClick={() => togglePreferredCuisine(cuisine)}
+                          className="ml-1 hover:text-green-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Статистика */}
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
@@ -313,7 +453,7 @@ export default function PreferencesPanel({
                 Статистика
               </h4>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-blue-600">
                   {stats?.totalViewed || 0}
@@ -337,6 +477,12 @@ export default function PreferencesPanel({
                   {currentPrefs.dietaryRestrictions?.length || 0}
                 </div>
                 <div className="text-sm text-gray-600">Ограничения</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {currentPrefs.preferredCuisines?.length || 0}
+                </div>
+                <div className="text-sm text-gray-600">Кухни</div>
               </div>
             </div>
           </div>

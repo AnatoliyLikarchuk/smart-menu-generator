@@ -11,6 +11,7 @@ import {
   getScoreCategory
 } from '../data/scoringRules.js';
 import { getCategoryPriority } from '../data/categories.js';
+import { validateCuisines, isPopularCuisine } from '../data/cuisines.js';
 import { getContextualPreferences, isTimeAppropriate } from '../utils/timeUtils.js';
 import { MIN_DISH_SCORE } from '../utils/constants.js';
 
@@ -298,6 +299,19 @@ export class ScoringService {
     // Бонус за сбалансированность
     if (analysis.nutrition.isBalanced) {
       bonuses.balanced = 1;
+    }
+    
+    // Бонус за предпочитаемые кухни
+    if (userPreferences.preferredCuisines && userPreferences.preferredCuisines.length > 0) {
+      const validCuisines = validateCuisines(userPreferences.preferredCuisines);
+      if (dish.strArea && validCuisines.includes(dish.strArea)) {
+        bonuses.preferredCuisine = BONUS_RULES.userPreferences.preferredCategory; // Используем тот же бонус что и для категории
+        
+        // Дополнительный бонус за популярные кухни
+        if (isPopularCuisine(dish.strArea)) {
+          bonuses.popularCuisine = 0.5;
+        }
+      }
     }
     
     return bonuses;

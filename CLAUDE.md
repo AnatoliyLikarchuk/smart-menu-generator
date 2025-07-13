@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Smart Menu Generator - это умный генератор меню для выбора блюд на основе времени дня, сложности приготовления и пищевых предпочтений без использования ИИ. Проект создается для Тани с использованием алгоритмической логики вместо машинного обучения.
+Smart Menu Generator - это умный генератор меню для выбора блюд на основе времени дня, сложности приготовления и пищевых предпочтений без использования ИИ. Проект создан для Тани с использованием алгоритмической логики вместо машинного обучения.
 
 ## Development Commands
 
@@ -22,84 +22,80 @@ npm start
 npm run lint
 ```
 
-## Architecture Overview
+## Environment Setup
 
-### Core System Design
-Проект использует модульную архитектуру с четким разделением ответственности:
+Copy `.env.local.example` to `.env.local` and configure:
+- `DEEPSEEK_API_KEY` - API key from platform.deepseek.com for high-quality translations
+- `DEEPSEEK_PRIORITY` - true/false to prioritize AI vs static translations
 
-**Smart Selection Algorithm**: Система оценки блюд основана на:
-- Анализ времени приготовления (парсинг из текста рецептов)
-- Расчет сложности (количество ингредиентов и шагов)
-- Определение типа белка и способа приготовления
-- Взвешенный случайный выбор с учетом времени дня
+## Core Architecture
 
-**Data Flow**:
-1. `timeUtils.js` определяет тип питания по времени дня
-2. `dishService.js` получает блюда из TheMealDB API
-3. `mealAnalyzer.js` анализирует каждое блюдо
-4. `scoringService.js` оценивает блюда по критериям
-5. `filterService.js` применяет взвешенный выбор
-6. `storageService.js` сохраняет предпочтения пользователя
+### Smart Selection Algorithm
+Проект использует детерминистический алгоритм без ИИ:
+- **Recipe parsing**: Extracts cooking time from instruction text using regex patterns
+- **Complexity scoring**: Analyzes ingredient count and cooking steps
+- **Weighted selection**: Random selection weighted by meal type and time context
+- **Personalization**: User preferences stored in localStorage
 
-### Key Directories
+### Critical Data Flow
+1. `timeUtils.js` - Auto-detects meal type by current time
+2. `dishService.js` - Fetches 25 dishes per category from TheMealDB API
+3. `mealAnalyzer.js` - Asynchronously analyzes each dish (cooking time, complexity, nutrition)
+4. `scoringService.js` - Scores dishes based on meal type weights and user context
+5. `filterService.js` - Applies weighted random selection with diversity algorithms
+6. `storageService.js` - Manages user preferences and avoids recently shown dishes
 
-**`/services`**: Бизнес-логика приложения
-- `dishService.js` - получение блюд из внешнего API
-- `scoringService.js` - система оценки блюд по алгоритму
-- `filterService.js` - фильтрация и взвешенный выбор
-- `storageService.js` - работа с localStorage для предпочтений
+### Key Service Architecture
 
-**`/utils`**: Вспомогательные функции
-- `mealAnalyzer.js` - анализ рецептов без ИИ (парсинг времени, сложности)
-- `timeUtils.js` - определение типа питания по времени
-- `constants.js` - конфигурация и константы
+**`services/dishService.js`**: Central dish management
+- `getSmartDish()` - Single dish recommendation
+- `getSmartRecommendations()` - Multiple diverse recommendations (CRITICAL: must use `await` with `ScoringService.scoreDishes()`)
+- `fetchDishesFromAPI()` - Parallel category fetching with 25 dish limit per category
 
-**`/data`**: Статические данные и правила
-- `categories.js` - категории блюд для разных типов питания
-- `scoringRules.js` - весовые коэффициенты для системы оценки
-- `fallbackDishes.js` - резервные блюда при сбое API
+**`services/filterService.js`**: Selection algorithms  
+- `selectDiverseDishes()` - Randomized category selection from top-3 dishes per category
+- `weightedRandomSelect()` - Weighted random selection for single dishes
+- Diet and preference filtering
 
-**`/components`**: UI компоненты React
-- `MenuGenerator.js` - главный компонент приложения
-- `DishCard.js` - карточка блюда
-- `MealTypeSelector.js` - выбор типа питания
-- `PreferencesPanel.js` - панель настроек
+**`services/scoringService.js`**: Scoring system
+- `scoreDishes()` - Async dish analysis and scoring (MUST be awaited)
+- Context-aware scoring based on meal type, time, and user preferences
 
-### External Dependencies
+### Algorithm Randomization
+The app uses sophisticated randomization to prevent repetitive results:
+- Groups dishes by category and randomly selects from top-3 in each
+- Shuffles categories and applies score-based perturbation
+- Increased pool from 10 to 25 dishes per API category for diversity
 
-**TheMealDB API**: Основной источник рецептов
-- URL: `https://www.themealdb.com/api/json/v1/1/filter.php?c={category}`
-- Fallback: локальные данные в `data/fallbackDishes.js`
+### API Integration
 
-**Персонализация**: LocalStorage для:
-- История просмотренных блюд (избегание повторов 3 дня)
-- Лайки/дизлайки пользователя
-- Исключенные ингредиенты
-- Диетические предпочтения
+**TheMealDB API**: Primary recipe source
+- Endpoint: `https://www.themealdb.com/api/json/v1/1/filter.php?c={category}`
+- Fetches detailed dish info including instructions for analysis
+- Fallback to `data/fallbackDishes.js` on API failure
+
+**DeepSeek API**: Optional high-quality translations
+- Configured via environment variables
+- Falls back to static translation dictionary
 
 ### Technology Stack
 
-- **Framework**: Next.js 14 с App Router
-- **Styling**: Tailwind CSS 3.4.17 с кастомными цветами
+- **Framework**: Next.js 14 with App Router
+- **Styling**: Tailwind CSS with custom gradient themes
 - **Icons**: Lucide React
-- **Language**: JavaScript (ES6+)
-- **Storage**: Browser LocalStorage
-- **Deployment**: Vercel (планируется)
+- **Storage**: Browser localStorage for user preferences
+- **Deployment**: Vercel (auto-deploy from GitHub)
 
-### Development Notes
+### Common Issues & Solutions
 
-**App Router Structure**: Проект использует новую структуру Next.js App Router:
-- `app/layout.js` - корневой layout с мета-данными
-- `app/page.js` - главная страница
-- `app/api/smart-dish/` - API routes для умного выбора
+**Multiple Recommendations**: If "3 варианта" button returns same dishes, check that `getSmartRecommendations()` properly awaits `ScoringService.scoreDishes()`.
 
-**Конфигурация Tailwind**: Настроена для сканирования `app/` и `components/` директорий с кастомными primary цветами.
+**localStorage**: Filter services check `typeof window !== 'undefined'` before accessing localStorage to prevent SSR issues.
 
-**Система именования**: Все файлы используют camelCase, компоненты React начинаются с заглавной буквы.
+**API Rate Limiting**: Services use Promise.allSettled() for parallel requests and include timeout handling.
 
 ### Project Status
 
-**Текущий статус**: Этап 1 завершен (базовая инфраструктура)
-**Следующий этап**: Создание умного ядра системы (сервисы и API)
-
-Детальный план разработки находится в `../doc/IMPLEMENTATION_PLAN.md` и `../doc/PROJECT_PLAN.md`.
+**Current Status**: ✅ Production Ready - deployed at smart-menu-generator.vercel.app
+**Architecture**: Complete modular system with smart algorithms and personalization
+**Recent Improvements**: Fixed async/await issues and added randomization for diverse recommendations

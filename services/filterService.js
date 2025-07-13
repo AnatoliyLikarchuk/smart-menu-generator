@@ -1,6 +1,7 @@
 // Сервис фильтрации и взвешенного выбора блюд
 
 import { SCORE_THRESHOLDS } from '../data/scoringRules.js';
+import { validateCuisines, getCuisineInfo } from '../data/cuisines.js';
 import StorageService from './storageService.js';
 
 /**
@@ -74,6 +75,16 @@ export class FilterService {
       filteredDishes = filteredDishes.filter(dish =>
         this.matchesDietaryRestrictions(dish, preferences.dietaryRestrictions)
       );
+    }
+    
+    // Фильтруем по предпочитаемым кухням
+    if (preferences.preferredCuisines && preferences.preferredCuisines.length > 0) {
+      const validCuisines = validateCuisines(preferences.preferredCuisines);
+      if (validCuisines.length > 0) {
+        filteredDishes = filteredDishes.filter(dish =>
+          this.matchesPreferredCuisines(dish, validCuisines)
+        );
+      }
     }
     
     // Исключаем недавно показанные блюда из истории preferences (для совместимости)
@@ -473,5 +484,26 @@ export class FilterService {
     }
     
     return selected;
+  }
+
+  /**
+   * Проверяет соответствие блюда предпочитаемым кухням
+   * @param {object} dish - объект блюда
+   * @param {Array} preferredCuisines - массив предпочитаемых кухонь
+   * @returns {boolean} соответствует ли блюдо предпочитаемым кухням
+   */
+  static matchesPreferredCuisines(dish, preferredCuisines) {
+    // Если нет предпочтений, блюдо проходит фильтр
+    if (!preferredCuisines || preferredCuisines.length === 0) {
+      return true;
+    }
+    
+    // Проверяем свойство strArea блюда
+    if (dish.strArea) {
+      return preferredCuisines.includes(dish.strArea);
+    }
+    
+    // Если нет информации о кухне, считаем что блюдо не подходит
+    return false;
   }
 }

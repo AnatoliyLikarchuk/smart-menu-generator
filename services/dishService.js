@@ -6,6 +6,7 @@ import {
   getAvailableCategoriesForMealType, 
   getCategoriesWithDietaryRestrictions 
 } from '../data/categories.js';
+import { validateCuisines } from '../data/cuisines.js';
 import { getCurrentMealType, getContextualPreferences } from '../utils/timeUtils.js';
 import { API_CONFIG, API_STATUS } from '../utils/constants.js';
 
@@ -107,32 +108,58 @@ export class DishService {
    */
   static async fetchDishesFromAPI(mealType, userPreferences = {}) {
     try {
-      // Определяем категории для запроса с учетом диетических ограничений
-      const categories = userPreferences.dietaryRestrictions && userPreferences.dietaryRestrictions.length > 0
-        ? getCategoriesWithDietaryRestrictions(mealType, userPreferences.dietaryRestrictions)
-        : getAvailableCategoriesForMealType(mealType, true);
-      
-      console.log(`[DishService] Запрос блюд из категорий: ${categories.join(', ')}`);
-      
-      // Создаем промисы для запросов по каждой категории
-      const categoryPromises = categories.map(category => 
-        this.fetchDishesFromCategory(category)
-      );
-      
-      // Выполняем все запросы параллельно
-      const categoryResults = await Promise.allSettled(categoryPromises);
-      
-      // Собираем все успешные результаты
       const allDishes = [];
       
-      categoryResults.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value) {
-          console.log(`[DishService] Категория ${categories[index]}: ${result.value.length} блюд`);
-          allDishes.push(...result.value);
-        } else {
-          console.warn(`[DishService] Ошибка категории ${categories[index]}:`, result.reason);
-        }
-      });
+      // Проверяем есть ли предпочтения по кухням
+      const preferredCuisines = validateCuisines(userPreferences.preferredCuisines || []);
+      
+      if (preferredCuisines.length > 0) {
+        console.log(`[DishService] Запрос блюд из предпочитаемых кухонь: ${preferredCuisines.join(', ')}`);
+        
+        // Создаем промисы для запросов по каждой кухне
+        const cuisinePromises = preferredCuisines.map(cuisine => 
+          this.fetchDishesFromCuisine(cuisine)
+        );
+        
+        // Выполняем запросы по кухням параллельно
+        const cuisineResults = await Promise.allSettled(cuisinePromises);
+        
+        cuisineResults.forEach((result, index) => {
+          if (result.status === 'fulfilled' && result.value) {
+            console.log(`[DishService] Кухня ${preferredCuisines[index]}: ${result.value.length} блюд`);
+            allDishes.push(...result.value);
+          } else {
+            console.warn(`[DishService] Ошибка кухни ${preferredCuisines[index]}:`, result.reason);
+          }
+        });
+      }
+      
+      // Если нет предпочтений по кухням или получено мало блюд, дополняем категориями
+      if (preferredCuisines.length === 0 || allDishes.length < 50) {
+        // Определяем категории для запроса с учетом диетических ограничений
+        const categories = userPreferences.dietaryRestrictions && userPreferences.dietaryRestrictions.length > 0
+          ? getCategoriesWithDietaryRestrictions(mealType, userPreferences.dietaryRestrictions)
+          : getAvailableCategoriesForMealType(mealType, true);
+        
+        console.log(`[DishService] Дополняем блюдами из категорий: ${categories.join(', ')}`);
+        
+        // Создаем промисы для запросов по каждой категории
+        const categoryPromises = categories.map(category => 
+          this.fetchDishesFromCategory(category)
+        );
+        
+        // Выполняем все запросы параллельно
+        const categoryResults = await Promise.allSettled(categoryPromises);
+        
+        categoryResults.forEach((result, index) => {
+          if (result.status === 'fulfilled' && result.value) {
+            console.log(`[DishService] Категория ${categories[index]}: ${result.value.length} блюд`);
+            allDishes.push(...result.value);
+          } else {
+            console.warn(`[DishService] Ошибка категории ${categories[index]}:`, result.reason);
+          }
+        });
+      }
       
       // Удаляем дубликаты по ID
       const uniqueDishes = this.removeDuplicateDishes(allDishes);
@@ -189,6 +216,53 @@ export class DishService {
         console.warn(`[DishService] Таймаут запроса категории: ${category}`);
       } else {
         console.error(`[DishService] Ошибка запроса категории ${category}:`, error);
+      }
+      return [];
+    }
+  }
+
+  /**
+   * Получает блюда из конкретной кухни/региона
+   * @param {string} cuisine - кухня (например, 'Italian', 'Chinese')
+   * @returns {Promise<Array>} массив блюд из данной кухни
+   */
+  static async fetchDishesFromCuisine(cuisine) {
+    try {
+      const url = `${API_CONFIG.MEAL_DB_BASE_URL}/filter.php?a=${encodeURIComponent(cuisine)}`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.REQUEST_TIMEOUT);
+      
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.meals) {
+        console.warn(`[DishService] Нет блюд в кухне: ${cuisine}`);
+        return [];
+      }
+      
+      // Получаем полную информацию для каждого блюда (включая инструкции)
+      const detailedDishes = await this.fetchDetailedDishes(data.meals.slice(0, 25)); // Ограничиваем 25 блюдами на кухню
+      
+      return detailedDishes;
+      
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.warn(`[DishService] Таймаут запроса кухни: ${cuisine}`);
+      } else {
+        console.error(`[DishService] Ошибка запроса кухни ${cuisine}:`, error);
       }
       return [];
     }

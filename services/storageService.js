@@ -4,6 +4,7 @@
  */
 
 import { STORAGE_KEYS, DEFAULT_PREFERENCES } from '../utils/constants.js';
+import { DEFAULT_CUISINE_PREFERENCES, validateCuisines } from '../data/cuisines.js';
 
 class StorageService {
   /**
@@ -60,24 +61,42 @@ class StorageService {
   static getPreferences() {
     const preferences = this.safeGetItem(STORAGE_KEYS.PREFERENCES);
     
+    const defaultWithCuisines = {
+      ...DEFAULT_PREFERENCES,
+      ...DEFAULT_CUISINE_PREFERENCES
+    };
+    
     if (!preferences) {
       // Если предпочтений нет, создаем дефолтные
-      this.savePreferences(DEFAULT_PREFERENCES);
-      return DEFAULT_PREFERENCES;
+      this.savePreferences(defaultWithCuisines);
+      return defaultWithCuisines;
     }
     
     // Объединяем с дефолтными значениями на случай новых полей
-    return {
-      ...DEFAULT_PREFERENCES,
+    const mergedPreferences = {
+      ...defaultWithCuisines,
       ...preferences
     };
+    
+    // Валидируем кухни чтобы убрать невалидные
+    if (mergedPreferences.preferredCuisines) {
+      mergedPreferences.preferredCuisines = validateCuisines(mergedPreferences.preferredCuisines);
+    }
+    
+    return mergedPreferences;
   }
 
   /**
    * Сохранение предпочтений пользователя
    */
   static savePreferences(preferences) {
-    const success = this.safeSetItem(STORAGE_KEYS.PREFERENCES, preferences);
+    // Валидируем кухни перед сохранением
+    const validatedPreferences = { ...preferences };
+    if (validatedPreferences.preferredCuisines) {
+      validatedPreferences.preferredCuisines = validateCuisines(validatedPreferences.preferredCuisines);
+    }
+    
+    const success = this.safeSetItem(STORAGE_KEYS.PREFERENCES, validatedPreferences);
     if (success) {
       console.log('[StorageService] Предпочтения сохранены');
     }
