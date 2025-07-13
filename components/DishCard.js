@@ -305,24 +305,6 @@ export default function DishCard({
               </div>
             )}
 
-            {/* Кухня в метриках */}
-            {dish.strArea && (
-              <div className="flex items-center text-gray-600">
-                {(() => {
-                  const cuisineInfo = getCuisineInfo(dish.strArea);
-                  return (
-                    <>
-                      <span className="mr-1">{cuisineInfo.flag}</span>
-                      <span className="text-sm">
-                        {showRussian && translatedDish?.strAreaRu 
-                          ? translatedDish.strAreaRu
-                          : cuisineInfo.name}
-                      </span>
-                    </>
-                  );
-                })()}
-              </div>
-            )}
           </div>
         )}
 
