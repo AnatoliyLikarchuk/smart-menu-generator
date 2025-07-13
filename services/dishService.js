@@ -455,15 +455,24 @@ export class DishService {
       
       // Фильтруем и оцениваем
       const filteredDishes = FilterService.filterByPreferences(dishes, userPreferences);
+      console.log(`[DishService] После базовой фильтрации: ${filteredDishes.length} блюд`);
+      
       const scoredDishes = await ScoringService.scoreDishes(filteredDishes, mealType, userPreferences, context);
+      console.log(`[DishService] После оценки: ${scoredDishes.length} блюд`);
       
       // Фильтруем по предпочитаемой сложности и времени готовки после анализа
       const complexityFilteredDishes = FilterService.filterByComplexity(scoredDishes, userPreferences);
+      console.log(`[DishService] После фильтрации по сложности: ${complexityFilteredDishes.length} блюд`);
+      
       const timeFilteredDishes = FilterService.filterByMaxCookingTime(complexityFilteredDishes, userPreferences);
+      console.log(`[DishService] После фильтрации по времени: ${timeFilteredDishes.length} блюд`);
+      
       const dishesToSelect = timeFilteredDishes.length > 0 ? timeFilteredDishes : scoredDishes;
+      console.log(`[DishService] Блюд для выбора: ${dishesToSelect.length}, запрошено: ${count}`);
       
       // Выбираем разнообразные блюда
       const selectedDishes = FilterService.selectDiverseDishes(dishesToSelect, count);
+      console.log(`[DishService] Выбрано блюд: ${selectedDishes.length}`);
       
       return selectedDishes.map(item => ({
         dish: item.dish,

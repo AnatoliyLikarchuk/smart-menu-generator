@@ -414,6 +414,8 @@ export class FilterService {
    * @returns {Array} разнообразные блюда
    */
   static selectDiverseDishes(scoredDishes, count = 3) {
+    console.log(`[FilterService] selectDiverseDishes: входных блюд ${scoredDishes.length}, запрошено ${count}`);
+    
     if (count === 1) {
       return this.weightedRandomSelect(scoredDishes, 1);
     }
@@ -430,6 +432,8 @@ export class FilterService {
       }
       dishesByCategory.get(category).push(item);
     });
+    
+    console.log(`[FilterService] Найдено категорий: ${dishesByCategory.size}`, Array.from(dishesByCategory.keys()));
     
     // Сортируем блюда в каждой категории по оценке и добавляем случайность
     dishesByCategory.forEach((dishes, category) => {
@@ -483,6 +487,7 @@ export class FilterService {
       selected.push(...additional);
     }
     
+    console.log(`[FilterService] Итого выбрано: ${selected.length} блюд`);
     return selected;
   }
 
