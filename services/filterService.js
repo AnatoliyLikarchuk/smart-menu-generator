@@ -506,4 +506,52 @@ export class FilterService {
     // Если нет информации о кухне, считаем что блюдо не подходит
     return false;
   }
+
+  /**
+   * Фильтрует блюда по предпочитаемой сложности
+   * @param {Array} scoredDishes - массив блюд с анализом и оценками
+   * @param {object} preferences - предпочтения пользователя
+   * @returns {Array} отфильтрованные блюда
+   */
+  static filterByComplexity(scoredDishes, preferences = {}) {
+    const preferredComplexity = preferences.preferredComplexity;
+    
+    // Если предпочтение "любая" или не указано, возвращаем все блюда
+    if (!preferredComplexity || preferredComplexity === 'any') {
+      return scoredDishes;
+    }
+    
+    return scoredDishes.filter(item => {
+      const analysis = item.analysis;
+      if (!analysis || !analysis.complexityCategory) {
+        return true; // Если нет анализа, не исключаем блюдо
+      }
+      
+      return analysis.complexityCategory === preferredComplexity;
+    });
+  }
+
+  /**
+   * Фильтрует блюда по максимальному времени готовки
+   * @param {Array} scoredDishes - массив блюд с анализом и оценками
+   * @param {object} preferences - предпочтения пользователя
+   * @returns {Array} отфильтрованные блюда
+   */
+  static filterByMaxCookingTime(scoredDishes, preferences = {}) {
+    const maxCookingTime = preferences.maxCookingTime;
+    
+    // Если максимальное время не указано, возвращаем все блюда
+    if (!maxCookingTime || maxCookingTime <= 0) {
+      return scoredDishes;
+    }
+    
+    return scoredDishes.filter(item => {
+      const analysis = item.analysis;
+      if (!analysis || !analysis.cookingTime) {
+        return true; // Если нет анализа времени, не исключаем блюдо
+      }
+      
+      return analysis.cookingTime <= maxCookingTime;
+    });
+  }
 }

@@ -65,8 +65,19 @@ export class DishService {
         return await this.getFallbackDish(mealType, userPreferences);
       }
       
+      // Фильтруем по предпочитаемой сложности и времени готовки после анализа
+      const complexityFilteredDishes = FilterService.filterByComplexity(scoredDishes, userPreferences);
+      const timeFilteredDishes = FilterService.filterByMaxCookingTime(complexityFilteredDishes, userPreferences);
+      
+      // Выбираем из каких блюд делать финальный выбор
+      const dishesToSelect = timeFilteredDishes.length > 0 ? timeFilteredDishes : scoredDishes;
+      
+      if (timeFilteredDishes.length === 0) {
+        console.log('[DishService] Нет блюд после фильтрации по сложности/времени, используем все');
+      }
+      
       // Выбираем лучшее блюдо
-      const selectedDishes = FilterService.weightedRandomSelect(scoredDishes, 1);
+      const selectedDishes = FilterService.weightedRandomSelect(dishesToSelect, 1);
       
       if (selectedDishes.length === 0) {
         console.log('[DishService] Нет выбранных блюд, используем fallback');
@@ -446,8 +457,13 @@ export class DishService {
       const filteredDishes = FilterService.filterByPreferences(dishes, userPreferences);
       const scoredDishes = await ScoringService.scoreDishes(filteredDishes, mealType, userPreferences, context);
       
+      // Фильтруем по предпочитаемой сложности и времени готовки после анализа
+      const complexityFilteredDishes = FilterService.filterByComplexity(scoredDishes, userPreferences);
+      const timeFilteredDishes = FilterService.filterByMaxCookingTime(complexityFilteredDishes, userPreferences);
+      const dishesToSelect = timeFilteredDishes.length > 0 ? timeFilteredDishes : scoredDishes;
+      
       // Выбираем разнообразные блюда
-      const selectedDishes = FilterService.selectDiverseDishes(scoredDishes, count);
+      const selectedDishes = FilterService.selectDiverseDishes(dishesToSelect, count);
       
       return selectedDishes.map(item => ({
         dish: item.dish,
